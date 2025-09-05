@@ -1,0 +1,26 @@
+{
+  "name": "slack-time-tracker-bot",
+  "version": "1.0.0",
+  "description": "Slack bot for team time tracking and hour logging",
+  "main": "bot.js",
+  "scripts": {
+    "start": "node bot.js",
+    "dev": "nodemon bot.js",
+    "test": "jest"
+  },
+  "dependencies": {
+    "@slack/bolt": "^3.17.1",
+    "@supabase/supabase-js": "^2.56.1",
+    "dotenv": "^16.3.1",
+    "date-fns": "^2.29.3",
+    "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2",
+    "jest": "^29.7.0"
+  },
+  "keywords": ["slack", "bot", "time-tracking", "hours", "productivity"],
+  "author": "Your Team",
+  "license": "MIT"
+}
+

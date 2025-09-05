@@ -1,0 +1,37 @@
+{
+  "name": "namos-tests",
+  "version": "1.0.0",
+  "description": "Test suite for NamOS Financial Dashboard",
+  "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:file-upload": "jest file-upload.test.js",
+    "test:bot": "jest bot-functionality.test.js",
+    "test:ci": "jest --ci --coverage --watchAll=false"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.0",
+    "jest": "^29.5.0"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.39.0",
+    "dotenv": "^16.3.1"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "testTimeout": 30000,
+    "setupFilesAfterEnv": ["<rootDir>/jest.setup.js"],
+    "collectCoverageFrom": [
+      "../telegram-bot/**/*.js",
+      "../src/**/*.{js,ts,tsx}",
+      "!**/node_modules/**",
+      "!**/temp/**"
+    ],
+    "coverageDirectory": "coverage",
+    "coverageReporters": ["text", "lcov", "html"],
+    "testMatch": [
+      "**/*.test.js"
+    ]
+  }
+}
