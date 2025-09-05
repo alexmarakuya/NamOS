@@ -6,7 +6,8 @@
   "scripts": {
     "start": "node bot.js",
     "dev": "nodemon bot.js",
-    "test": "jest"
+    "test": "jest",
+    "build": "echo 'No build step required'"
   },
   "dependencies": {
     "@slack/bolt": "^3.17.1",

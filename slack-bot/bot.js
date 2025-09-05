@@ -66,6 +66,7 @@ async function ensureUserExists(userId, client) {
 
 // Slash command: /log-time
 app.command('/log-time', async ({ command, ack, respond, client }) => {
+  console.log('🎯 Received /log-time command from user:', command.user_id);
   await ack();
   
   try {
@@ -387,6 +388,7 @@ app.command('/team-time', async ({ command, ack, respond }) => {
 
 // Quick time logging with natural language
 app.message(/^log (\d+(?:\.\d+)?|\d+h?\s*\d*m?|\d+:\d+)\s+(.+)$/i, async ({ message, say, client }) => {
+  console.log('🎯 Received quick time log message:', message.text);
   try {
     await ensureUserExists(message.user, client);
     
@@ -429,6 +431,7 @@ app.message(/^log (\d+(?:\.\d+)?|\d+h?\s*\d*m?|\d+:\d+)\s+(.+)$/i, async ({ mess
 
 // Help command
 app.command('/time-help', async ({ ack, respond }) => {
+  console.log('🎯 Received /time-help command');
   await ack();
   
   const helpText = `🕐 *Time Tracking Bot Help*\n\n` +
