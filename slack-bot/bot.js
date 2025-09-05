@@ -458,7 +458,7 @@ app.command('/time-help', async ({ ack, respond }) => {
   
     await respond({
       text: helpText,
-      response_type: 'ephemeral'
+      response_type: 'in_channel'
     });
     console.log('✅ Sent help response to Slack');
   } catch (error) {
