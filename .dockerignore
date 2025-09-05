@@ -1,0 +1,17 @@
+# Ignore everything except slack-bot
+*
+!slack-bot/
+
+# But ignore node_modules in slack-bot (will be installed during build)
+slack-bot/node_modules/
+slack-bot/.env
+
+# Ignore other directories we don't need
+src/
+public/
+database/
+telegram-bot/
+tests/
+node_modules/
+.git/
+.github/

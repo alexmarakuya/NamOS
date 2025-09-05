@@ -1,0 +1,18 @@
+# Dockerfile specifically for the Slack bot
+FROM node:18-alpine
+
+# Set working directory
+WORKDIR /app
+
+# Copy only the slack-bot directory
+COPY slack-bot/package*.json ./
+RUN npm install --production
+
+# Copy the slack-bot source code
+COPY slack-bot/ ./
+
+# Expose port (though not needed for Socket Mode)
+EXPOSE 3000
+
+# Start the bot
+CMD ["npm", "start"]
