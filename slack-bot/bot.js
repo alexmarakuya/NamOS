@@ -432,7 +432,9 @@ app.message(/^log (\d+(?:\.\d+)?|\d+h?\s*\d*m?|\d+:\d+)\s+(.+)$/i, async ({ mess
 // Help command
 app.command('/time-help', async ({ ack, respond }) => {
   console.log('🎯 Received /time-help command');
-  await ack();
+  try {
+    await ack();
+    console.log('✅ Acknowledged /time-help command');
   
   const helpText = `🕐 *Time Tracking Bot Help*\n\n` +
     `*Commands:*\n` +
@@ -454,10 +456,22 @@ app.command('/time-help', async ({ ack, respond }) => {
     `• Quick logging defaults to billable time with no project\n` +
     `• All times are logged for today unless specified otherwise`;
   
-  await respond({
-    text: helpText,
-    response_type: 'ephemeral'
-  });
+    await respond({
+      text: helpText,
+      response_type: 'ephemeral'
+    });
+    console.log('✅ Sent help response to Slack');
+  } catch (error) {
+    console.error('❌ Error in /time-help command:', error);
+    try {
+      await respond({
+        text: 'Sorry, there was an error processing your request.',
+        response_type: 'ephemeral'
+      });
+    } catch (respondError) {
+      console.error('❌ Error sending error response:', respondError);
+    }
+  }
 });
 
 // Error handling
