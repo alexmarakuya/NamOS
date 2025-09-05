@@ -13,7 +13,7 @@ export interface Transaction {
 export interface BusinessUnit {
   id: string;
   name: string;
-  type: 'business' | 'personal';
+  type: 'business' | 'personal' | 'project' | 'mixed' | 'us_business';
   color: string;
 }
 

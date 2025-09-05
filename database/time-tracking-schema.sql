@@ -1,4 +1,5 @@
--- Time Tracking Schema for Slack Bot
+
+ -- Time Tracking Schema for Slack Bot
 -- Run this after the main schema.sql to add time tracking functionality
 
 -- Create projects table

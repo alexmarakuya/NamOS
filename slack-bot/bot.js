@@ -1,6 +1,6 @@
 const { App } = require('@slack/bolt');
 const { TimeTrackingDB } = require('./supabase');
-const { format, parseISO, startOfWeek, endOfWeek, startOfDay } = require('date-fns');
+const { format, parseISO, startOfWeek, endOfWeek, startOfDay, subDays } = require('date-fns');
 const { v4: uuidv4 } = require('uuid');
 require('dotenv').config();
 
@@ -24,19 +24,37 @@ function formatHours(hours) {
 }
 
 function parseTimeInput(timeStr) {
-  // Parse various time formats: "2.5", "2h 30m", "2:30", etc.
+  // Parse various time formats with natural language support
   timeStr = timeStr.toLowerCase().trim();
+  
+  // Handle natural language expressions
+  const naturalPatterns = [
+    { pattern: /half\s*(?:an?\s*)?hour|30\s*min/, value: 0.5 },
+    { pattern: /quarter\s*(?:of\s*an?\s*)?hour|15\s*min/, value: 0.25 },
+    { pattern: /three\s*quarters?\s*(?:of\s*an?\s*)?hour|45\s*min/, value: 0.75 },
+    { pattern: /an?\s*hour/, value: 1 },
+    { pattern: /couple\s*(?:of\s*)?hours/, value: 2 },
+    { pattern: /few\s*hours/, value: 3 },
+    { pattern: /all\s*day/, value: 8 },
+    { pattern: /half\s*day/, value: 4 }
+  ];
+  
+  for (const { pattern, value } of naturalPatterns) {
+    if (pattern.test(timeStr)) {
+      return value;
+    }
+  }
   
   // Handle decimal hours (e.g., "2.5")
   if (/^\d+(\.\d+)?$/.test(timeStr)) {
     return parseFloat(timeStr);
   }
   
-  // Handle "2h 30m" format
-  const hoursMinutesMatch = timeStr.match(/(?:(\d+)h?)?\s*(?:(\d+)m?)?/);
-  if (hoursMinutesMatch) {
-    const hours = parseInt(hoursMinutesMatch[1] || 0);
-    const minutes = parseInt(hoursMinutesMatch[2] || 0);
+  // Handle "2h 30m" format with more flexibility
+  const hoursMinutesMatch = timeStr.match(/(?:(\d+(?:\.\d+)?)\s*(?:hours?|hrs?|h))?\s*(?:(\d+(?:\.\d+)?)\s*(?:minutes?|mins?|m))?/);
+  if (hoursMinutesMatch && (hoursMinutesMatch[1] || hoursMinutesMatch[2])) {
+    const hours = parseFloat(hoursMinutesMatch[1] || 0);
+    const minutes = parseFloat(hoursMinutesMatch[2] || 0);
     return hours + (minutes / 60);
   }
   
@@ -46,6 +64,19 @@ function parseTimeInput(timeStr) {
     const hours = parseInt(colonMatch[1]);
     const minutes = parseInt(colonMatch[2]);
     return hours + (minutes / 60);
+  }
+  
+  // Handle written numbers
+  const numberWords = {
+    'one': 1, 'two': 2, 'three': 3, 'four': 4, 'five': 5,
+    'six': 6, 'seven': 7, 'eight': 8, 'nine': 9, 'ten': 10
+  };
+  
+  for (const [word, num] of Object.entries(numberWords)) {
+    if (timeStr.includes(word)) {
+      if (timeStr.includes('hour')) return num;
+      if (timeStr.includes('minute')) return num / 60;
+    }
   }
   
   return null;
@@ -72,126 +103,36 @@ app.command('/log-time', async ({ command, ack, respond, client }) => {
   try {
     await ensureUserExists(command.user_id, client);
     
-    // Show modal for time logging
-    await client.views.open({
-      trigger_id: command.trigger_id,
-      view: {
-        type: 'modal',
-        callback_id: 'log_time_modal',
-        title: {
-          type: 'plain_text',
-          text: 'Log Time Entry'
-        },
-        submit: {
-          type: 'plain_text',
-          text: 'Log Time'
-        },
-        close: {
-          type: 'plain_text',
-          text: 'Cancel'
-        },
-        blocks: [
-          {
-            type: 'input',
-            block_id: 'hours_block',
-            element: {
-              type: 'plain_text_input',
-              action_id: 'hours_input',
-              placeholder: {
-                type: 'plain_text',
-                text: 'e.g., 2.5, 2h 30m, or 2:30'
-              }
-            },
-            label: {
-              type: 'plain_text',
-              text: 'Hours Worked'
-            }
-          },
-          {
-            type: 'input',
-            block_id: 'description_block',
-            element: {
-              type: 'plain_text_input',
-              action_id: 'description_input',
-              multiline: true,
-              placeholder: {
-                type: 'plain_text',
-                text: 'What did you work on?'
-              }
-            },
-            label: {
-              type: 'plain_text',
-              text: 'Description'
-            }
-          },
-          {
-            type: 'input',
-            block_id: 'project_block',
-            element: {
-              type: 'external_select',
-              action_id: 'project_select',
-              placeholder: {
-                type: 'plain_text',
-                text: 'Select a project'
-              },
-              min_query_length: 0
-            },
-            label: {
-              type: 'plain_text',
-              text: 'Project'
-            },
-            optional: true
-          },
-          {
-            type: 'input',
-            block_id: 'date_block',
-            element: {
-              type: 'datepicker',
-              action_id: 'date_input',
-              initial_date: format(new Date(), 'yyyy-MM-dd')
-            },
-            label: {
-              type: 'plain_text',
-              text: 'Date'
-            }
-          },
-          {
-            type: 'input',
-            block_id: 'billable_block',
-            element: {
-              type: 'checkboxes',
-              action_id: 'billable_checkbox',
-              options: [
-                {
-                  text: {
-                    type: 'plain_text',
-                    text: 'This time is billable'
-                  },
-                  value: 'billable'
-                }
-              ],
-              initial_options: [
-                {
-                  text: {
-                    type: 'plain_text',
-                    text: 'This time is billable'
-                  },
-                  value: 'billable'
-                }
-              ]
-            },
-            label: {
-              type: 'plain_text',
-              text: 'Billing'
-            },
-            optional: true
-          }
-        ]
-      }
+    // Start conversational flow
+    await respond({
+      text: `Hi! 👋 Let's log some time. How many hours did you work? 
+
+You can say things like:
+• "2.5 hours" 
+• "1 hour 30 minutes"
+• "half an hour"
+• "all day"
+
+Or just type the number: "2.5"`,
+      response_type: 'ephemeral'
     });
+
+    // Store conversation state (simple in-memory store)
+    if (!global.conversationStates) {
+      global.conversationStates = new Map();
+    }
+    
+    global.conversationStates.set(command.user_id, {
+      step: 'waiting_for_hours',
+      channel: command.channel_id,
+      started_at: Date.now(),
+      data: {}
+    });
+
+    console.log('✅ Started conversational time logging flow for user:', command.user_id);
   } catch (error) {
-    console.error('Error opening time log modal:', error);
-    await respond('Sorry, there was an error opening the time logging form.');
+    console.error('Error starting conversational flow:', error);
+    await respond('Sorry, there was an error starting the time logging conversation.');
   }
 });
 
@@ -227,88 +168,7 @@ app.options('project_select', async ({ options, ack }) => {
   }
 });
 
-// Handle time logging modal submission
-app.view('log_time_modal', async ({ ack, body, view, client }) => {
-  try {
-    const values = view.state.values;
-    const hoursInput = values.hours_block.hours_input.value;
-    const description = values.description_block.description_input.value;
-    const projectId = values.project_block.project_select.selected_option?.value;
-    const date = values.date_block.date_input.selected_date;
-    const isBillable = values.billable_block.billable_checkbox.selected_options?.length > 0;
-    
-    // Parse hours
-    const hours = parseTimeInput(hoursInput);
-    if (!hours || hours <= 0 || hours > 24) {
-      await ack({
-        response_action: 'errors',
-        errors: {
-          hours_block: 'Please enter a valid time between 0 and 24 hours'
-        }
-      });
-      return;
-    }
-    
-    if (!description?.trim()) {
-      await ack({
-        response_action: 'errors',
-        errors: {
-          description_block: 'Description is required'
-        }
-      });
-      return;
-    }
-    
-    await ack();
-    
-    // Create time entry
-    const timeEntry = {
-      user_id: body.user.id,
-      user_name: body.user.username || body.user.name,
-      project_id: projectId === 'none' ? null : projectId,
-      description: description.trim(),
-      hours: hours,
-      date: date,
-      is_billable: isBillable,
-      slack_channel_id: body.user.id, // DM channel
-      slack_message_ts: new Date().getTime().toString()
-    };
-    
-    const savedEntry = await db.logTime(timeEntry);
-    
-    // Send confirmation message
-    const projectText = savedEntry.projects?.name || 'No Project';
-    const clientText = savedEntry.projects?.client_name ? ` (${savedEntry.projects.client_name})` : '';
-    
-    await client.chat.postMessage({
-      channel: body.user.id,
-      text: `✅ Time logged successfully!`,
-      blocks: [
-        {
-          type: 'section',
-          text: {
-            type: 'mrkdwn',
-            text: `✅ *Time logged successfully!*\n\n` +
-                  `*Hours:* ${formatHours(hours)}\n` +
-                  `*Project:* ${projectText}${clientText}\n` +
-                  `*Date:* ${format(parseISO(date), 'MMM d, yyyy')}\n` +
-                  `*Billable:* ${isBillable ? 'Yes' : 'No'}\n` +
-                  `*Description:* ${description}`
-          }
-        }
-      ]
-    });
-    
-  } catch (error) {
-    console.error('Error logging time:', error);
-    await ack({
-      response_action: 'errors',
-      errors: {
-        hours_block: 'Failed to log time. Please try again.'
-      }
-    });
-  }
-});
+// Modal handler removed - now using conversational flow
 
 // Slash command: /my-time
 app.command('/my-time', async ({ command, ack, respond, client }) => {
@@ -386,15 +246,40 @@ app.command('/team-time', async ({ command, ack, respond }) => {
   }
 });
 
-// Quick time logging with natural language
-app.message(/^log (\d+(?:\.\d+)?|\d+h?\s*\d*m?|\d+:\d+)\s+(.+)$/i, async ({ message, say, client }) => {
-  console.log('🎯 Received quick time log message:', message.text);
+// Enhanced natural language patterns for time logging
+const timeLoggingPatterns = [
+  // "log 2.5 working on project"
+  /^log\s+([\d\.\:]+(?:h(?:ours?)?|m(?:ins?|inutes?)?|\s*)+)\s+(.+)$/i,
+  // "spent 2 hours working on project"  
+  /^(?:i\s+)?spent\s+(.*?)\s+(?:on\s+|working\s+on\s+)?(.+)$/i,
+  // "worked 3 hours on project"
+  /^(?:i\s+)?worked\s+(.*?)\s+(?:on\s+)?(.+)$/i,
+  // "put in 2.5 hours for project"
+  /^(?:i\s+)?put\s+in\s+(.*?)\s+(?:for\s+|on\s+)?(.+)$/i,
+  // "logged 1.5 hours debugging"
+  /^(?:i\s+)?logged\s+(.*?)\s+(.+)$/i,
+  // "did 2 hours of coding"
+  /^(?:i\s+)?did\s+(.*?)\s+(?:of\s+)?(.+)$/i
+];
+
+// Quick time logging with enhanced natural language
+app.message(new RegExp(timeLoggingPatterns.map(p => p.source).join('|'), 'i'), async ({ message, say, client }) => {
+  console.log('🎯 Received natural language time log:', message.text);
   try {
     await ensureUserExists(message.user, client);
     
-    const match = message.text.match(/^log (\d+(?:\.\d+)?|\d+h?\s*\d*m?|\d+:\d+)\s+(.+)$/i);
-    const timeStr = match[1];
-    const description = match[2];
+    // Try to match against all patterns
+    let timeStr = null;
+    let description = null;
+    
+    for (const pattern of timeLoggingPatterns) {
+      const match = message.text.match(pattern);
+      if (match) {
+        timeStr = match[1];
+        description = match[2];
+        break;
+      }
+    }
     
     const hours = parseTimeInput(timeStr);
     if (!hours || hours <= 0 || hours > 24) {
@@ -421,11 +306,227 @@ app.message(/^log (\d+(?:\.\d+)?|\d+h?\s*\d*m?|\d+:\d+)\s+(.+)$/i, async ({ mess
     
     const savedEntry = await db.logTime(timeEntry);
     
-    await say(`✅ Logged ${formatHours(hours)} for "${description}"`);
+    // Generate a more conversational response
+    const responses = [
+      `✅ Got it! Logged ${formatHours(hours)} for "${description}"`,
+      `✅ Nice work! ${formatHours(hours)} logged for "${description}"`,
+      `✅ Time tracked! Added ${formatHours(hours)} for "${description}"`,
+      `✅ Perfect! Logged ${formatHours(hours)} working on "${description}"`,
+      `✅ Done! ${formatHours(hours)} added to your timesheet for "${description}"`
+    ];
+    
+    const response = responses[Math.floor(Math.random() * responses.length)];
+    await say(response);
     
   } catch (error) {
     console.error('Error with quick time logging:', error);
     await say('❌ Failed to log time. Please try again or use `/log-time` for the full form.');
+  }
+});
+
+// Conversational time logging handler
+app.message(async ({ message, say, client }) => {
+  // Skip if this is a bot message or already handled by other patterns
+  if (message.subtype || !global.conversationStates) return;
+  
+  const state = global.conversationStates.get(message.user);
+  if (!state) return; // No active conversation
+  
+  // Check if conversation is too old (timeout after 10 minutes)
+  if (Date.now() - state.started_at > 10 * 60 * 1000) {
+    global.conversationStates.delete(message.user);
+    return;
+  }
+  
+  console.log('🎯 Handling conversational flow step:', state.step, 'for user:', message.user);
+  
+  try {
+    switch (state.step) {
+      case 'waiting_for_hours':
+        const hours = parseTimeInput(message.text);
+        if (!hours || hours <= 0 || hours > 24) {
+          await say(`❌ I didn't understand that time format. Try something like:
+• "2.5 hours"
+• "1 hour 30 minutes" 
+• "half an hour"
+• "2h 30m"
+
+How many hours did you work?`);
+          return;
+        }
+        
+        state.data.hours = hours;
+        state.step = 'waiting_for_description';
+        
+        await say(`✅ Got it! ${formatHours(hours)} logged. 
+
+Now, what did you work on? Describe what you did:`);
+        break;
+        
+      case 'waiting_for_description':
+        if (message.text.trim().length < 3) {
+          await say(`Please provide a bit more detail about what you worked on. What did you do during those ${formatHours(state.data.hours)}?`);
+          return;
+        }
+        
+        state.data.description = message.text.trim();
+        state.step = 'waiting_for_date';
+        
+        await say(`Perfect! Working on "${state.data.description}"
+
+What date was this for? You can say:
+• "today" 
+• "yesterday"
+• "Monday" 
+• "2024-01-15"
+• Or just hit enter for today`);
+        break;
+        
+      case 'waiting_for_date':
+        let date;
+        const dateText = message.text.trim().toLowerCase();
+        
+        if (!dateText || dateText === 'today' || dateText === 'enter') {
+          date = format(new Date(), 'yyyy-MM-dd');
+        } else if (dateText === 'yesterday') {
+          date = format(subDays(new Date(), 1), 'yyyy-MM-dd');
+        } else if (/^\d{4}-\d{2}-\d{2}$/.test(dateText)) {
+          date = dateText;
+        } else {
+          // Try parsing day names
+          const dayMatch = dateText.match(/(monday|tuesday|wednesday|thursday|friday|saturday|sunday)/);
+          if (dayMatch) {
+            // Find the most recent occurrence of this day
+            const today = new Date();
+            const targetDay = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'].indexOf(dayMatch[1]);
+            const currentDay = today.getDay();
+            let daysBack = currentDay - targetDay;
+            if (daysBack <= 0) daysBack += 7;
+            date = format(subDays(today, daysBack), 'yyyy-MM-dd');
+          } else {
+            await say(`❌ I didn't understand that date. Try:
+• "today" or "yesterday"
+• A day name like "Monday"  
+• A date like "2024-01-15"
+
+What date was this work for?`);
+            return;
+          }
+        }
+        
+        state.data.date = date;
+        state.step = 'waiting_for_billable';
+        
+        await say(`📅 Date set to ${date}
+
+Is this billable time? Reply with:
+• "yes" or "billable" 
+• "no" or "not billable"
+• Or just hit enter for billable (default)`);
+        break;
+        
+      case 'waiting_for_billable':
+        const billableText = message.text.trim().toLowerCase();
+        let isBillable = true; // Default to billable
+        
+        if (billableText === 'no' || billableText === 'not billable' || billableText === 'non-billable') {
+          isBillable = false;
+        }
+        
+        // Save the time entry
+        const timeEntry = {
+          user_id: message.user,
+          description: state.data.description,
+          hours: state.data.hours,
+          date: state.data.date,
+          is_billable: isBillable,
+          slack_channel_id: message.channel,
+          slack_message_ts: message.ts
+        };
+        
+        // Get user info for proper username
+        const userInfo = await client.users.info({ user: message.user });
+        timeEntry.user_name = userInfo.user.username || userInfo.user.name;
+        
+        await ensureUserExists(message.user, client);
+        const savedEntry = await db.logTime(timeEntry);
+        
+        // Clear conversation state
+        global.conversationStates.delete(message.user);
+        
+        const billableLabel = isBillable ? '💰 billable' : '📝 non-billable';
+        await say(`🎉 Perfect! Time entry saved:
+
+📊 **${formatHours(state.data.hours)}** ${billableLabel}
+📝 ${state.data.description}
+📅 ${state.data.date}
+
+Great work! You can start another entry anytime with \`/log-time\` or just say "spent 2 hours coding"`);
+        break;
+    }
+    
+  } catch (error) {
+    console.error('Error in conversational flow:', error);
+    global.conversationStates.delete(message.user);
+    await say('❌ Sorry, something went wrong. Please try starting over with `/log-time`');
+  }
+});
+
+// General conversational responses
+app.message(/^(hi|hello|hey)\s*(?:there|bot)?!?$/i, async ({ say, message }) => {
+  const greetings = [
+    `Hey there! 👋 I'm your time tracking assistant. Try typing "log 2 hours coding" or use \`/time-help\` to see what I can do!`,
+    `Hello! 🤖 Ready to help you track time. You can say things like "spent 1.5 hours on meetings" or use \`/log-time\` for more options.`,
+    `Hi! ⏰ I'm here to make time tracking easy. Try "worked 3 hours debugging" or \`/my-time\` to see your daily summary.`
+  ];
+  await say(greetings[Math.floor(Math.random() * greetings.length)]);
+});
+
+app.message(/^(thanks?|thank\s*you)\s*(?:bot)?!?$/i, async ({ say }) => {
+  const responses = [
+    `You're welcome! 😊 Keep up the great work!`,
+    `Happy to help! 🎉 Time tracking made easy!`,
+    `Anytime! 👍 I'm here whenever you need to log time.`,
+    `No problem! ⚡ Glad I could help with your time tracking.`
+  ];
+  await say(responses[Math.floor(Math.random() * responses.length)]);
+});
+
+app.message(/^(help|what\s*can\s*you\s*do)\s*\??$/i, async ({ say }) => {
+  await say(`🤖 I can help you track time in lots of ways! Here are some examples:
+
+**Natural Language:**
+• "spent 2 hours coding"
+• "worked 1.5 hours on design"  
+• "put in half an hour debugging"
+• "did 3 hours of meetings"
+• "logged an hour writing docs"
+
+**Quick Format:**
+• "log 2.5 project work"
+• "log 1h 30m client call"
+
+**Slash Commands:**
+• \`/log-time\` - Full logging form
+• \`/my-time\` - Your daily summary
+• \`/team-time\` - Team overview
+• \`/time-help\` - Complete help
+
+Just talk to me naturally! I understand lots of different ways to express time. 😊`);
+});
+
+app.message(/^(status|summary|how.*doing)\s*\??$/i, async ({ message, say }) => {
+  try {
+    const today = format(new Date(), 'yyyy-MM-dd');
+    const summary = await db.getUserDailySummary(message.user, today);
+    
+    if (summary.total_hours > 0) {
+      await say(`📊 Today you've logged ${formatHours(summary.total_hours)} total (${formatHours(summary.billable_hours)} billable). Great job! 🎉`);
+    } else {
+      await say(`📊 No time logged yet today. Ready to get started? Try "spent 1 hour on project" or use \`/log-time\`! 💪`);
+    }
+  } catch (error) {
+    await say(`I'd love to give you a status update, but I'm having trouble accessing your data right now. Try \`/my-time\` instead! 🤖`);
   }
 });
 

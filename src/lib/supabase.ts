@@ -22,7 +22,7 @@ export interface DatabaseTransaction {
 export interface DatabaseBusinessUnit {
   id: string;
   name: string;
-  type: 'business' | 'personal';
+  type: 'business' | 'personal' | 'project' | 'mixed' | 'us_business';
   color: string;
   created_at: string;
   updated_at: string;

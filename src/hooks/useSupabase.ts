@@ -1,6 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase, DatabaseTransaction, DatabaseBusinessUnit, DatabaseAttachment, uploadFile, getFileUrl } from '../lib/supabase';
 
+// Type alias for backward compatibility
+type DatabaseArea = DatabaseBusinessUnit;
+
 // Custom hook for fetching business units
 export const useBusinessUnits = () => {
   const [businessUnits, setBusinessUnits] = useState<DatabaseBusinessUnit[]>([]);
@@ -31,6 +34,17 @@ export const useBusinessUnits = () => {
   return { businessUnits, loading, error, refetch: fetchBusinessUnits };
 };
 
+// Alias for areas (same as business units)
+export const useAreas = () => {
+  const result = useBusinessUnits();
+  return {
+    areas: result.businessUnits,
+    loading: result.loading,
+    error: result.error,
+    refetch: result.refetch
+  };
+};
+
 // Custom hook for fetching transactions
 export const useTransactions = (businessUnitId?: string) => {
   const [transactions, setTransactions] = useState<DatabaseTransaction[]>([]);
@@ -45,8 +59,8 @@ export const useTransactions = (businessUnitId?: string) => {
         .select('*')
         .order('date', { ascending: false });
 
-      if (areaId && areaId !== 'all') {
-        query = query.eq('business_unit_id', areaId);
+      if (businessUnitId && businessUnitId !== 'all') {
+        query = query.eq('business_unit_id', businessUnitId);
       }
 
       const { data, error } = await query;
@@ -184,8 +198,8 @@ export const useCategoryBreakdown = (month: string, year: number, type: 'income'
         .gte('date', startDate)
         .lte('date', endDate);
 
-      if (areaId && areaId !== 'all') {
-        query = query.eq('business_unit_id', areaId);
+      if (businessUnitId && businessUnitId !== 'all') {
+        query = query.eq('business_unit_id', businessUnitId);
       }
 
       const { data, error } = await query;

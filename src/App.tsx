@@ -5,6 +5,7 @@ import FinancialChart from './components/FinancialChart';
 import FilterTabs from './components/FilterTabs';
 import AddTransactionModal from './components/AddTransactionModal';
 import { useAreas, useTransactions, convertDbTransactionToApp, convertDbAreaToApp } from './hooks/useSupabase';
+import { DatabaseBusinessUnit } from './lib/supabase';
 import { DashboardStats, ChartData } from './types';
 
 function App() {
@@ -30,7 +31,7 @@ function App() {
   const transactionsWithAreas = useMemo(() => 
     transactions.map(transaction => {
       const dbTransaction = dbTransactions.find(db => db.id === transaction.id);
-      const area = dbAreas.find(a => a.id === dbTransaction?.business_unit_id);
+      const area = dbAreas.find((a: DatabaseBusinessUnit) => a.id === dbTransaction?.business_unit_id);
       return {
         ...transaction,
         area: area?.name || 'Unknown'
@@ -138,7 +139,7 @@ function App() {
           <div className="text-red-500 text-6xl mb-4">⚠️</div>
           <h2 className="text-xl font-semibold text-neutral-900 mb-2 braun-text">Database Connection Error</h2>
           <p className="text-neutral-600 mb-4 braun-text">
-            {businessUnitsError || transactionsError}
+            {areasError || transactionsError}
           </p>
           <p className="text-sm text-neutral-500 braun-text">
             Please check your Supabase configuration in the .env file and ensure your database is set up correctly.
