@@ -2,7 +2,19 @@ const { App } = require('@slack/bolt');
 const { TimeTrackingDB } = require('./supabase');
 const { format, parseISO, startOfWeek, endOfWeek, startOfDay, subDays } = require('date-fns');
 const { v4: uuidv4 } = require('uuid');
+const OpenAI = require('openai');
 require('dotenv').config();
+
+// Initialize OpenAI (optional)
+let openai = null;
+if (process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY !== 'your-openai-api-key-here') {
+  openai = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY
+  });
+  console.log('🤖 OpenAI integration enabled');
+} else {
+  console.log('⚠️  OpenAI integration disabled (no API key provided)');
+}
 
 // Initialize the Slack app
 const app = new App({
@@ -21,6 +33,213 @@ function formatHours(hours) {
   const h = Math.floor(hours);
   const m = Math.round((hours - h) * 60);
   return m > 0 ? `${h}h ${m}m` : `${h}h`;
+}
+
+// AI-powered time entry parsing
+async function parseTimeEntryWithAI(message, projects) {
+  if (!openai) return null;
+  
+  try {
+    const projectList = projects.map(p => {
+      const client = p.client_name ? ` (${p.client_name})` : '';
+      return `- ${p.name}${client}`;
+    }).join('\n');
+
+    const prompt = `Parse this time tracking message and extract structured information:
+
+Message: "${message}"
+
+Available projects:
+${projectList}
+
+Extract and return ONLY a JSON object with these fields:
+{
+  "hours": number (decimal hours, e.g. 2.5),
+  "description": "work description",
+  "project": "exact project name from list or null",
+  "date": "YYYY-MM-DD or 'today'",
+  "billable": true/false,
+  "confidence": number (0-1)
+}
+
+Rules:
+- If no specific project is mentioned, set project to null
+- If date isn't specified, use "today"
+- Default billable to true unless explicitly mentioned as non-billable
+- Set confidence based on how clear the information is
+- Only return the JSON object, no other text`;
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-3.5-turbo",
+      messages: [{ role: "user", content: prompt }],
+      temperature: 0.1,
+      max_tokens: 200
+    });
+
+    const response = completion.choices[0].message.content.trim();
+    
+    // Try to parse the JSON response
+    try {
+      const parsed = JSON.parse(response);
+      
+      // Find matching project
+      if (parsed.project) {
+        const matchingProject = projects.find(p => 
+          p.name.toLowerCase() === parsed.project.toLowerCase()
+        );
+        if (matchingProject) {
+          parsed.project_id = matchingProject.id;
+        }
+      }
+      
+      return parsed;
+    } catch (parseError) {
+      console.error('Error parsing AI response:', parseError);
+      return null;
+    }
+    
+  } catch (error) {
+    console.error('OpenAI API error:', error);
+    return null;
+  }
+}
+
+// AI-enhanced project detection
+async function detectProjectWithAI(description, projects) {
+  if (!openai) {
+    // Fallback to rule-based detection
+    return detectProjectFromDescription(description, projects);
+  }
+  
+  try {
+    const projectList = projects.map(p => {
+      const client = p.client_name ? ` (${p.client_name})` : '';
+      return `- ${p.name}${client}: ${p.description || 'No description'}`;
+    }).join('\n');
+
+    const prompt = `Based on this work description, suggest the most relevant project:
+
+Work description: "${description}"
+
+Available projects:
+${projectList}
+
+Return ONLY a JSON object:
+{
+  "bestMatch": "exact project name or null",
+  "confidence": number (0-1),
+  "reasoning": "brief explanation"
+}`;
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-3.5-turbo",
+      messages: [{ role: "user", content: prompt }],
+      temperature: 0.1,
+      max_tokens: 150
+    });
+
+    const response = completion.choices[0].message.content.trim();
+    const parsed = JSON.parse(response);
+    
+    if (parsed.bestMatch) {
+      const matchingProject = projects.find(p => 
+        p.name.toLowerCase() === parsed.bestMatch.toLowerCase()
+      );
+      
+      if (matchingProject) {
+        return {
+          bestMatch: matchingProject,
+          confidence: parsed.confidence,
+          alternatives: []
+        };
+      }
+    }
+    
+    return null;
+    
+  } catch (error) {
+    console.error('AI project detection error:', error);
+    // Fallback to rule-based detection
+    return detectProjectFromDescription(description, projects);
+  }
+}
+
+// Smart project detection based on description keywords
+function detectProjectFromDescription(description, projects) {
+  if (!projects || projects.length === 0) return null;
+  
+  const desc = description.toLowerCase();
+  const scores = [];
+  
+  projects.forEach(project => {
+    let score = 0;
+    const projectName = project.name.toLowerCase();
+    const clientName = project.client_name ? project.client_name.toLowerCase() : '';
+    
+    // Exact project name match gets highest score
+    if (desc.includes(projectName)) {
+      score += 100;
+    }
+    
+    // Client name match gets high score
+    if (clientName && desc.includes(clientName)) {
+      score += 80;
+    }
+    
+    // Partial word matches
+    const projectWords = projectName.split(/\s+/);
+    const clientWords = clientName.split(/\s+/);
+    const descWords = desc.split(/\s+/);
+    
+    projectWords.forEach(word => {
+      if (word.length > 2 && descWords.some(dWord => dWord.includes(word) || word.includes(dWord))) {
+        score += 20;
+      }
+    });
+    
+    clientWords.forEach(word => {
+      if (word.length > 2 && descWords.some(dWord => dWord.includes(word) || word.includes(dWord))) {
+        score += 15;
+      }
+    });
+    
+    // Common work type keywords
+    const workTypeKeywords = {
+      'website': ['web', 'site', 'frontend', 'ui', 'design'],
+      'api': ['backend', 'server', 'database', 'endpoint'],
+      'mobile': ['app', 'ios', 'android', 'mobile'],
+      'marketing': ['campaign', 'social', 'content', 'seo'],
+      'meeting': ['call', 'discussion', 'planning', 'standup'],
+      'bug': ['fix', 'debug', 'issue', 'problem'],
+      'feature': ['new', 'implement', 'add', 'create']
+    };
+    
+    // Check if project name contains work type keywords
+    Object.entries(workTypeKeywords).forEach(([workType, keywords]) => {
+      if (projectName.includes(workType)) {
+        keywords.forEach(keyword => {
+          if (desc.includes(keyword)) {
+            score += 10;
+          }
+        });
+      }
+    });
+    
+    scores.push({ project, score });
+  });
+  
+  // Sort by score and return the best match if it's above threshold
+  scores.sort((a, b) => b.score - a.score);
+  
+  if (scores.length > 0 && scores[0].score >= 20) {
+    return {
+      bestMatch: scores[0].project,
+      confidence: Math.min(scores[0].score / 100, 1),
+      alternatives: scores.slice(1, 3).filter(s => s.score >= 10).map(s => s.project)
+    };
+  }
+  
+  return null;
 }
 
 function parseTimeInput(timeStr) {
@@ -246,29 +465,93 @@ app.command('/team-time', async ({ command, ack, respond }) => {
   }
 });
 
-// Enhanced natural language patterns for time logging
-const timeLoggingPatterns = [
-  // "log 2.5 working on project"
-  /^log\s+([\d\.\:]+(?:h(?:ours?)?|m(?:ins?|inutes?)?|\s*)+)\s+(.+)$/i,
-  // "spent 2 hours working on project"  
-  /^(?:i\s+)?spent\s+(.*?)\s+(?:on\s+|working\s+on\s+)?(.+)$/i,
-  // "worked 3 hours on project"
-  /^(?:i\s+)?worked\s+(.*?)\s+(?:on\s+)?(.+)$/i,
-  // "put in 2.5 hours for project"
-  /^(?:i\s+)?put\s+in\s+(.*?)\s+(?:for\s+|on\s+)?(.+)$/i,
-  // "logged 1.5 hours debugging"
-  /^(?:i\s+)?logged\s+(.*?)\s+(.+)$/i,
-  // "did 2 hours of coding"
-  /^(?:i\s+)?did\s+(.*?)\s+(?:of\s+)?(.+)$/i
-];
-
-// Quick time logging with enhanced natural language
-app.message(new RegExp(timeLoggingPatterns.map(p => p.source).join('|'), 'i'), async ({ message, say, client }) => {
-  console.log('🎯 Received natural language time log:', message.text);
+// AI-powered natural language time logging
+app.message(async ({ message, say, client }) => {
+  // Skip if this is a bot message, already handled, or in a conversation
+  if (message.subtype || message.bot_id) return;
+  
+  const state = global.conversationStates?.get(message.user);
+  if (state) return; // User is in a conversation flow
+  
+  // Skip if it's a simple greeting or command we handle elsewhere
+  const text = message.text.toLowerCase();
+  if (/^(hi|hello|hey|thanks|help|status|summary)\s*/.test(text)) return;
+  if (text.startsWith('/')) return; // Skip slash commands
+  
+  console.log('🤖 Analyzing message with AI:', message.text);
+  
   try {
     await ensureUserExists(message.user, client);
     
-    // Try to match against all patterns
+    // Try AI parsing first
+    if (openai) {
+      const projects = await db.getActiveProjects();
+      const aiResult = await parseTimeEntryWithAI(message.text, projects || []);
+      
+      if (aiResult && aiResult.confidence > 0.7 && aiResult.hours) {
+        console.log('🎯 AI parsed time entry:', aiResult);
+        
+        // Process the date
+        let date = format(new Date(), 'yyyy-MM-dd');
+        if (aiResult.date && aiResult.date !== 'today') {
+          try {
+            date = aiResult.date;
+          } catch (e) {
+            // Keep default date if parsing fails
+          }
+        }
+        
+        // Create time entry
+        const timeEntry = {
+          user_id: message.user,
+          description: aiResult.description,
+          hours: aiResult.hours,
+          date: date,
+          is_billable: aiResult.billable !== false,
+          project_id: aiResult.project_id || null,
+          slack_channel_id: message.channel,
+          slack_message_ts: message.ts
+        };
+        
+        // Get user info
+        const userInfo = await client.users.info({ user: message.user });
+        timeEntry.user_name = userInfo.user.username || userInfo.user.name;
+        
+        const savedEntry = await db.logTime(timeEntry);
+        
+        // Generate AI-enhanced response
+        let response = `🤖 **AI Parsed**: Logged ${formatHours(aiResult.hours)} for "${aiResult.description}"`;
+        
+        if (aiResult.project_id) {
+          const project = projects.find(p => p.id === aiResult.project_id);
+          if (project) {
+            const clientInfo = project.client_name ? ` (${project.client_name})` : '';
+            response += `\n🎯 **Project**: ${project.name}${clientInfo}`;
+          }
+        }
+        
+        if (date !== format(new Date(), 'yyyy-MM-dd')) {
+          response += `\n📅 **Date**: ${date}`;
+        }
+        
+        response += `\n💰 **Billable**: ${aiResult.billable !== false ? 'Yes' : 'No'}`;
+        
+        await say(response);
+        return;
+      }
+    }
+    
+    // Fallback to pattern matching for time logging
+    const timeLoggingPatterns = [
+      /^log\s+([\d\.\:]+(?:h(?:ours?)?|m(?:ins?|inutes?)?|\s*)+)\s+(.+)$/i,
+      /^(?:i\s+)?spent\s+(.*?)\s+(?:on\s+|working\s+on\s+)?(.+)$/i,
+      /^(?:i\s+)?worked\s+(.*?)\s+(?:on\s+)?(.+)$/i,
+      /^(?:i\s+)?put\s+in\s+(.*?)\s+(?:for\s+|on\s+)?(.+)$/i,
+      /^(?:i\s+)?logged\s+(.*?)\s+(.+)$/i,
+      /^(?:i\s+)?did\s+(.*?)\s+(?:of\s+)?(.+)$/i
+    ];
+    
+    // Check if message matches time logging patterns
     let timeStr = null;
     let description = null;
     
@@ -281,17 +564,35 @@ app.message(new RegExp(timeLoggingPatterns.map(p => p.source).join('|'), 'i'), a
       }
     }
     
+    if (!timeStr || !description) return; // Not a time logging message
+    
+    console.log('🎯 Fallback pattern matching for time log:', message.text);
+    
     const hours = parseTimeInput(timeStr);
     if (!hours || hours <= 0 || hours > 24) {
       await say(`❌ Invalid time format. Try something like "log 2.5 working on project" or "log 2h 30m debugging"`);
       return;
     }
     
-    // Log time with default values
+    // Try smart project detection for quick logging
+    let detectedProjectId = null;
+    try {
+      const projects = await db.getActiveProjects();
+      if (projects && projects.length > 0) {
+        const detection = await detectProjectWithAI(description, projects);
+        if (detection && detection.confidence >= 0.6) {
+          detectedProjectId = detection.bestMatch.id;
+        }
+      }
+    } catch (error) {
+      console.error('Error in smart project detection for quick logging:', error);
+    }
+
+    // Log time with smart project detection
     const timeEntry = {
       user_id: message.user,
       user_name: message.user, // Will be updated with actual username
-      project_id: null,
+      project_id: detectedProjectId,
       description: description.trim(),
       hours: hours,
       date: format(new Date(), 'yyyy-MM-dd'),
@@ -306,8 +607,8 @@ app.message(new RegExp(timeLoggingPatterns.map(p => p.source).join('|'), 'i'), a
     
     const savedEntry = await db.logTime(timeEntry);
     
-    // Generate a more conversational response
-    const responses = [
+    // Generate a more conversational response with project info
+    const baseResponses = [
       `✅ Got it! Logged ${formatHours(hours)} for "${description}"`,
       `✅ Nice work! ${formatHours(hours)} logged for "${description}"`,
       `✅ Time tracked! Added ${formatHours(hours)} for "${description}"`,
@@ -315,7 +616,22 @@ app.message(new RegExp(timeLoggingPatterns.map(p => p.source).join('|'), 'i'), a
       `✅ Done! ${formatHours(hours)} added to your timesheet for "${description}"`
     ];
     
-    const response = responses[Math.floor(Math.random() * responses.length)];
+    let response = baseResponses[Math.floor(Math.random() * baseResponses.length)];
+    
+    // Add project info if one was detected
+    if (detectedProjectId) {
+      try {
+        const projects = await db.getActiveProjects();
+        const detectedProject = projects.find(p => p.id === detectedProjectId);
+        if (detectedProject) {
+          const clientInfo = detectedProject.client_name ? ` (${detectedProject.client_name})` : '';
+          response += `\n🎯 **Auto-detected project**: ${detectedProject.name}${clientInfo}`;
+        }
+      } catch (error) {
+        console.error('Error getting project info for response:', error);
+      }
+    }
+    
     await say(response);
     
   } catch (error) {
@@ -370,9 +686,24 @@ Now, what did you work on? Describe what you did:`);
         }
         
         state.data.description = message.text.trim();
-        state.step = 'waiting_for_date';
+        state.step = 'waiting_for_project';
         
-        await say(`Perfect! Working on "${state.data.description}"
+        // Fetch available projects and use smart detection
+        try {
+          const projects = await db.getActiveProjects();
+          if (projects && projects.length > 0) {
+            // Try AI-enhanced project detection
+            const detection = await detectProjectWithAI(state.data.description, projects);
+            
+            if (detection && detection.confidence >= 0.8) {
+              // High confidence - auto-select the project
+              state.data.project_id = detection.bestMatch.id;
+              state.step = 'waiting_for_date';
+              
+              const clientInfo = detection.bestMatch.client_name ? ` (${detection.bestMatch.client_name})` : '';
+              await say(`Perfect! Working on "${state.data.description}"
+
+🎯 **Smart Detection**: I think this is for **${detection.bestMatch.name}**${clientInfo}
 
 What date was this for? You can say:
 • "today" 
@@ -380,6 +711,109 @@ What date was this for? You can say:
 • "Monday" 
 • "2024-01-15"
 • Or just hit enter for today`);
+            } else if (detection && detection.confidence >= 0.3) {
+              // Medium confidence - suggest but let user choose
+              let projectMessage = `Perfect! Working on "${state.data.description}"
+
+🤖 **Smart Suggestion**: This looks like it might be for **${detection.bestMatch.name}**`;
+              
+              if (detection.bestMatch.client_name) {
+                projectMessage += ` (${detection.bestMatch.client_name})`;
+              }
+              
+              projectMessage += `\n\nChoose a project:\n**0.** ${detection.bestMatch.name}`;
+              if (detection.bestMatch.client_name) {
+                projectMessage += ` (${detection.bestMatch.client_name})`;
+              }
+              projectMessage += ` ⭐ *Suggested*\n`;
+              
+              projects.forEach((project, index) => {
+                if (project.id !== detection.bestMatch.id) {
+                  const clientInfo = project.client_name ? ` (${project.client_name})` : '';
+                  projectMessage += `**${index + 1}.** ${project.name}${clientInfo}\n`;
+                }
+              });
+              
+              projectMessage += `\nType the **number** of the project, or "none" for no specific project.`;
+              
+              // Store projects and detection for reference
+              state.data.availableProjects = projects;
+              state.data.suggestedProject = detection.bestMatch;
+              await say(projectMessage);
+            } else {
+              // Low/no confidence - show all projects normally
+              let projectMessage = `Perfect! Working on "${state.data.description}"\n\nWhich project should this time be logged to?\n\n`;
+              
+              projects.forEach((project, index) => {
+                const clientInfo = project.client_name ? ` (${project.client_name})` : '';
+                projectMessage += `**${index + 1}.** ${project.name}${clientInfo}\n`;
+              });
+              
+              projectMessage += `\nType the **number** of the project, or "none" if this doesn't belong to a specific project.`;
+              
+              // Store projects for reference
+              state.data.availableProjects = projects;
+              await say(projectMessage);
+            }
+          } else {
+            // No projects available, skip to date
+            state.step = 'waiting_for_date';
+            await say(`Perfect! Working on "${state.data.description}"\n\nWhat date was this for? You can say:\n• "today"\n• "yesterday"\n• "Monday"\n• "2024-01-15"\n• Or just hit enter for today`);
+          }
+        } catch (error) {
+          console.error('Error fetching projects:', error);
+          // Skip project selection if there's an error
+          state.step = 'waiting_for_date';
+          await say(`Perfect! Working on "${state.data.description}"\n\nWhat date was this for? You can say:\n• "today"\n• "yesterday"\n• "Monday"\n• "2024-01-15"\n• Or just hit enter for today`);
+        }
+        break;
+        
+      case 'waiting_for_project':
+        const projectInput = message.text.trim().toLowerCase();
+        const availableProjects = state.data.availableProjects || [];
+        const suggestedProject = state.data.suggestedProject;
+        
+        if (projectInput === 'none' || projectInput === 'no project') {
+          state.data.project_id = null;
+          state.step = 'waiting_for_date';
+          await say(`📋 No specific project selected.\n\nWhat date was this for? You can say:\n• "today"\n• "yesterday"\n• "Monday"\n• "2024-01-15"\n• Or just hit enter for today`);
+        } else {
+          const projectNumber = parseInt(projectInput);
+          
+          if (projectNumber === 0 && suggestedProject) {
+            // User selected the suggested project (option 0)
+            state.data.project_id = suggestedProject.id;
+            state.step = 'waiting_for_date';
+            
+            const clientInfo = suggestedProject.client_name ? ` (${suggestedProject.client_name})` : '';
+            await say(`🎯 Great choice! Selected **${suggestedProject.name}**${clientInfo} ⭐\n\nWhat date was this for? You can say:\n• "today"\n• "yesterday"\n• "Monday"\n• "2024-01-15"\n• Or just hit enter for today`);
+          } else if (projectNumber && projectNumber >= 1 && projectNumber <= availableProjects.length) {
+            // Find the project, accounting for suggested project taking slot 0
+            let selectedProject;
+            if (suggestedProject) {
+              // Filter out suggested project and get the nth remaining project
+              const otherProjects = availableProjects.filter(p => p.id !== suggestedProject.id);
+              selectedProject = otherProjects[projectNumber - 1];
+            } else {
+              selectedProject = availableProjects[projectNumber - 1];
+            }
+            
+            if (selectedProject) {
+              state.data.project_id = selectedProject.id;
+              state.step = 'waiting_for_date';
+              
+              const clientInfo = selectedProject.client_name ? ` (${selectedProject.client_name})` : '';
+              await say(`🎯 Project selected: **${selectedProject.name}**${clientInfo}\n\nWhat date was this for? You can say:\n• "today"\n• "yesterday"\n• "Monday"\n• "2024-01-15"\n• Or just hit enter for today`);
+            } else {
+              const maxNumber = suggestedProject ? availableProjects.length : availableProjects.length;
+              await say(`❌ Please enter a valid project number (${suggestedProject ? '0-' : '1-'}${maxNumber}) or "none" for no specific project.`);
+            }
+          } else {
+            const maxNumber = suggestedProject ? availableProjects.length : availableProjects.length;
+            const minNumber = suggestedProject ? 0 : 1;
+            await say(`❌ Please enter a valid project number (${minNumber}-${maxNumber}) or "none" for no specific project.`);
+          }
+        }
         break;
         
       case 'waiting_for_date':
@@ -440,6 +874,7 @@ Is this billable time? Reply with:
           hours: state.data.hours,
           date: state.data.date,
           is_billable: isBillable,
+          project_id: state.data.project_id || null,
           slack_channel_id: message.channel,
           slack_message_ts: message.ts
         };
@@ -455,10 +890,21 @@ Is this billable time? Reply with:
         global.conversationStates.delete(message.user);
         
         const billableLabel = isBillable ? '💰 billable' : '📝 non-billable';
+        
+        // Find project name for display
+        let projectInfo = '';
+        if (state.data.project_id && state.data.availableProjects) {
+          const selectedProject = state.data.availableProjects.find(p => p.id === state.data.project_id);
+          if (selectedProject) {
+            const clientInfo = selectedProject.client_name ? ` (${selectedProject.client_name})` : '';
+            projectInfo = `\n🎯 ${selectedProject.name}${clientInfo}`;
+          }
+        }
+        
         await say(`🎉 Perfect! Time entry saved:
 
 📊 **${formatHours(state.data.hours)}** ${billableLabel}
-📝 ${state.data.description}
+📝 ${state.data.description}${projectInfo}
 📅 ${state.data.date}
 
 Great work! You can start another entry anytime with \`/log-time\` or just say "spent 2 hours coding"`);
@@ -493,24 +939,36 @@ app.message(/^(thanks?|thank\s*you)\s*(?:bot)?!?$/i, async ({ say }) => {
 });
 
 app.message(/^(help|what\s*can\s*you\s*do)\s*\??$/i, async ({ say }) => {
-  await say(`🤖 I can help you track time in lots of ways! Here are some examples:
+  const aiStatus = openai ? '🤖 **AI-Powered**' : '🔧 **Rule-Based**';
+  
+  await say(`${aiStatus} I can help you track time in lots of ways! Here are some examples:
 
-**Natural Language:**
+**Natural Language (${openai ? 'AI-Enhanced' : 'Pattern-Based'}):**
 • "spent 2 hours coding"
 • "worked 1.5 hours on design"  
 • "put in half an hour debugging"
 • "did 3 hours of meetings"
 • "logged an hour writing docs"
+${openai ? '• "I worked from 9 to 5 on the website project with a lunch break"' : ''}
+
+**Conversational Logging:**
+• \`/log-time\` - I'll ask you step by step:
+  1. How many hours?
+  2. What did you work on?
+  3. Which project? (${openai ? '🤖 AI suggestions!' : '🔍 Smart matching!'})
+  4. What date?
+  5. Billable or not?
 
 **Quick Format:**
 • "log 2.5 project work"
 • "log 1h 30m client call"
 
-**Slash Commands:**
-• \`/log-time\` - Full logging form
+**Other Commands:**
 • \`/my-time\` - Your daily summary
 • \`/team-time\` - Team overview
 • \`/time-help\` - Complete help
+
+${openai ? '🧠 **AI Features**: I can understand complex time descriptions, detect projects intelligently, and parse natural language with high accuracy!' : '⚡ **Smart Features**: I use pattern matching and keyword detection to understand your time entries!'}
 
 Just talk to me naturally! I understand lots of different ways to express time. 😊`);
 });
