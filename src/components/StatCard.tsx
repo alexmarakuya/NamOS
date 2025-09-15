@@ -8,29 +8,28 @@ interface StatCardProps {
 }
 
 const StatCard: React.FC<StatCardProps> = ({ title, value, change, changeType }) => {
+  const getChangeClass = () => {
+    switch (changeType) {
+      case 'positive': return 'stat-change-positive';
+      case 'negative': return 'stat-change-negative';
+      default: return 'stat-change-neutral';
+    }
+  };
+
   return (
-    <div className="bg-neutral-100 border-r border-b border-neutral-200 p-8">
-      <div className="space-y-5">
-        <div>
-          <h3 className="braun-label text-neutral-600 mb-4">
-            {title}
-          </h3>
-          <p className="text-4xl font-normal text-neutral-900 tracking-tight braun-text">
-            {value}
-          </p>
-        </div>
-        
-        {change && (
-          <div className="pt-3 border-t border-neutral-200">
-            <p className={`text-sm font-medium braun-text ${
-              changeType === 'positive' ? 'text-neutral-700' : 
-              changeType === 'negative' ? 'text-accent-500' : 'text-neutral-600'
-            }`}>
-              {change}
-            </p>
-          </div>
-        )}
+    <div className="stat-card">
+      <div className="stat-title">
+        {title}
       </div>
+      <div className="stat-value">
+        {value}
+      </div>
+      {change && (
+        <div className={`stat-change ${getChangeClass()}`}>
+          <span>{changeType === 'positive' ? '↗' : changeType === 'negative' ? '↘' : '→'}</span>
+          <span>{change}</span>
+        </div>
+      )}
     </div>
   );
 };

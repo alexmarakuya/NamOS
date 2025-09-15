@@ -1,107 +1,183 @@
-# Financial Dashboard
+# Supabase CLI
 
-A comprehensive financial dashboard application to track income and expenses across multiple business units and personal finances.
+[![Coverage Status](https://coveralls.io/repos/github/supabase/cli/badge.svg?branch=main)](https://coveralls.io/github/supabase/cli?branch=main) [![Bitbucket Pipelines](https://img.shields.io/bitbucket/pipelines/supabase-cli/setup-cli/master?style=flat-square&label=Bitbucket%20Canary)](https://bitbucket.org/supabase-cli/setup-cli/pipelines) [![Gitlab Pipeline Status](https://img.shields.io/gitlab/pipeline-status/sweatybridge%2Fsetup-cli?label=Gitlab%20Canary)
+](https://gitlab.com/sweatybridge/setup-cli/-/pipelines)
 
-## Features
+[Supabase](https://supabase.io) is an open source Firebase alternative. We're building the features of Firebase using enterprise-grade open source tools.
 
-- **Multi-Business Unit Support**: Track finances across different businesses and personal accounts
-- **Interactive Dashboard**: Real-time overview with key financial metrics
-- **Transaction Management**: Detailed transaction tracking with categories and tags
-- **Visual Analytics**: Charts and graphs for financial insights
-- **Modern UI**: Clean, responsive design built with React and Tailwind CSS
+This repository contains all the functionality for Supabase CLI.
 
-## Tech Stack
+- [x] Running Supabase locally
+- [x] Managing database migrations
+- [x] Creating and deploying Supabase Functions
+- [x] Generating types directly from your database schema
+- [x] Making authenticated HTTP requests to [Management API](https://supabase.com/docs/reference/api/introduction)
 
-- **Frontend**: React 18 with TypeScript
-- **Styling**: Tailwind CSS
-- **Charts**: Recharts
-- **Icons**: Lucide React
-- **Date Handling**: date-fns
+## Getting started
 
-## Getting Started
+### Install the CLI
 
-### Prerequisites
+Available via [NPM](https://www.npmjs.com) as dev dependency. To install:
 
-- Node.js (version 16 or higher)
-- npm or yarn
-
-### Installation
-
-1. Install dependencies:
 ```bash
-npm install
+npm i supabase --save-dev
 ```
 
-2. Start the development server:
+To install the beta release channel:
+
 ```bash
-npm start
+npm i supabase@beta --save-dev
 ```
 
-3. Open [http://localhost:3001](http://localhost:3001) to view the app in your browser.
-
-## Project Structure
+When installing with yarn 4, you need to disable experimental fetch with the following nodejs config.
 
 ```
-src/
-├── components/          # Reusable UI components
-│   ├── StatCard.tsx    # Dashboard statistics cards
-│   ├── TransactionTable.tsx  # Transaction data table
-│   └── FinancialChart.tsx     # Financial charts
-├── data/               # Mock data and data utilities
-│   └── mockData.ts     # Sample transactions and categories
-├── types/              # TypeScript type definitions
-│   └── index.ts        # Core data types
-└── App.tsx             # Main application component
+NODE_OPTIONS=--no-experimental-fetch yarn add supabase
 ```
 
-## Available Scripts
+> **Note**
+For Bun versions below v1.0.17, you must add `supabase` as a [trusted dependency](https://bun.sh/guides/install/trusted) before running `bun add -D supabase`.
 
-- `npm start` - Runs the app in development mode
-- `npm build` - Builds the app for production
-- `npm test` - Launches the test runner
-- `npm eject` - Ejects from Create React App (one-way operation)
+<details>
+  <summary><b>macOS</b></summary>
 
-## Customization
+  Available via [Homebrew](https://brew.sh). To install:
 
-### Adding Business Units
+  ```sh
+  brew install supabase/tap/supabase
+  ```
 
-Edit `src/data/mockData.ts` to add your business units:
+  To install the beta release channel:
+  
+  ```sh
+  brew install supabase/tap/supabase-beta
+  brew link --overwrite supabase-beta
+  ```
+  
+  To upgrade:
 
-```typescript
-export const businessUnits: BusinessUnit[] = [
-  { id: '1', name: 'Your Business Name', type: 'business', color: '#3b82f6' },
-  // Add more business units
-];
+  ```sh
+  brew upgrade supabase
+  ```
+</details>
+
+<details>
+  <summary><b>Windows</b></summary>
+
+  Available via [Scoop](https://scoop.sh). To install:
+
+  ```powershell
+  scoop bucket add supabase https://github.com/supabase/scoop-bucket.git
+  scoop install supabase
+  ```
+
+  To upgrade:
+
+  ```powershell
+  scoop update supabase
+  ```
+</details>
+
+<details>
+  <summary><b>Linux</b></summary>
+
+  Available via [Homebrew](https://brew.sh) and Linux packages.
+
+  #### via Homebrew
+
+  To install:
+
+  ```sh
+  brew install supabase/tap/supabase
+  ```
+
+  To upgrade:
+
+  ```sh
+  brew upgrade supabase
+  ```
+
+  #### via Linux packages
+
+  Linux packages are provided in [Releases](https://github.com/supabase/cli/releases). To install, download the `.apk`/`.deb`/`.rpm`/`.pkg.tar.zst` file depending on your package manager and run the respective commands.
+
+  ```sh
+  sudo apk add --allow-untrusted <...>.apk
+  ```
+
+  ```sh
+  sudo dpkg -i <...>.deb
+  ```
+
+  ```sh
+  sudo rpm -i <...>.rpm
+  ```
+
+  ```sh
+  sudo pacman -U <...>.pkg.tar.zst
+  ```
+</details>
+
+<details>
+  <summary><b>Other Platforms</b></summary>
+
+  You can also install the CLI via [go modules](https://go.dev/ref/mod#go-install) without the help of package managers.
+
+  ```sh
+  go install github.com/supabase/cli@latest
+  ```
+
+  Add a symlink to the binary in `$PATH` for easier access:
+
+  ```sh
+  ln -s "$(go env GOPATH)/bin/cli" /usr/bin/supabase
+  ```
+
+  This works on other non-standard Linux distros.
+</details>
+
+<details>
+  <summary><b>Community Maintained Packages</b></summary>
+
+  Available via [pkgx](https://pkgx.sh/). Package script [here](https://github.com/pkgxdev/pantry/blob/main/projects/supabase.com/cli/package.yml).
+  To install in your working directory:
+
+  ```bash
+  pkgx install supabase
+  ```
+
+  Available via [Nixpkgs](https://nixos.org/). Package script [here](https://github.com/NixOS/nixpkgs/blob/master/pkgs/development/tools/supabase-cli/default.nix).
+</details>
+
+### Run the CLI
+
+```bash
+supabase bootstrap
 ```
 
-### Adding Categories
+Or using npx:
 
-Customize income and expense categories in `src/data/mockData.ts`:
-
-```typescript
-export const categories: Category[] = [
-  { id: '1', name: 'Your Category', type: 'income', color: '#10b981' },
-  // Add more categories
-];
+```bash
+npx supabase bootstrap
 ```
 
-## Future Enhancements
+The bootstrap command will guide you through the process of setting up a Supabase project using one of the [starter](https://github.com/supabase-community/supabase-samples/blob/main/samples.json) templates.
 
-- Database integration (PostgreSQL/MongoDB)
-- User authentication and multi-user support
-- Export functionality (PDF/CSV)
-- Budget planning and forecasting
-- Mobile app version
-- Integration with banking APIs
-- Advanced reporting and analytics
+## Docs
 
-## Contributing
+Command & config reference can be found [here](https://supabase.com/docs/reference/cli/about).
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Submit a pull request
+## Breaking changes
 
-## License
+We follow semantic versioning for changes that directly impact CLI commands, flags, and configurations.
 
-This project is licensed under the MIT License.
+However, due to dependencies on other service images, we cannot guarantee that schema migrations, seed.sql, and generated types will always work for the same CLI major version. If you need such guarantees, we encourage you to pin a specific version of CLI in package.json.
+
+## Developing
+
+To run from source:
+
+```sh
+# Go >= 1.22
+go run . help
+```

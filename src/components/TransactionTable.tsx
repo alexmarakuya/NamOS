@@ -15,49 +15,54 @@ const TransactionTable: React.FC<TransactionTableProps> = ({ transactions }) => 
   };
 
   return (
-    <div className="bg-neutral-100">
-      <div className="px-8 py-7 border-b border-neutral-200">
-        <h2 className="text-xl font-medium text-neutral-900 braun-text">Recent Transactions</h2>
+    <div>
+      <div className="mb-6">
+        <h2 className="text-lg font-medium text-white braun-text">
+          Recent Transactions
+        </h2>
+        <p className="text-xs text-neutral-300 mt-1 braun-text">
+          Latest financial activity across all business units
+        </p>
       </div>
       
       <div className="overflow-x-auto">
         <table className="min-w-full">
           <thead>
-            <tr className="border-b border-neutral-200">
-              <th className="px-8 py-5 text-left braun-label text-neutral-600">
+            <tr className="border-b border-neutral-700">
+              <th className="table-cell-header text-left braun-label">
                 Date
               </th>
-              <th className="px-8 py-5 text-left braun-label text-neutral-600">
+              <th className="table-cell-header text-left braun-label">
                 Description
               </th>
-              <th className="px-8 py-5 text-left braun-label text-neutral-600">
+              <th className="table-cell-header text-left braun-label">
                 Category
               </th>
-              <th className="px-8 py-5 text-left braun-label text-neutral-600">
+              <th className="table-cell-header text-left braun-label">
                 Business Unit
               </th>
-              <th className="px-8 py-5 text-right braun-label text-neutral-600">
+              <th className="table-cell-header text-right braun-label">
                 Amount
               </th>
             </tr>
           </thead>
           <tbody>
             {transactions.map((transaction) => (
-              <tr key={transaction.id} className="border-b border-neutral-200">
-                <td className="px-8 py-5 text-sm text-neutral-700 braun-text">
+              <tr key={transaction.id} className="border-b border-neutral-700 hover:bg-neutral-700">
+                <td className="table-cell braun-text">
                   {format(transaction.date, 'MMM dd, yyyy')}
                 </td>
-                <td className="px-8 py-5 text-sm font-medium text-neutral-900 braun-text">
+                <td className="table-cell font-medium text-white braun-text">
                   {transaction.description}
                 </td>
-                <td className="px-8 py-5 text-sm text-neutral-600 braun-text">
+                <td className="table-cell text-neutral-300 braun-text">
                   {transaction.category}
                 </td>
-                <td className="px-8 py-5 text-sm text-neutral-600 braun-text">
+                <td className="table-cell text-neutral-300 braun-text">
                   {transaction.businessUnit}
                 </td>
-                <td className="px-8 py-5 text-sm text-right font-mono font-medium">
-                  <span className={transaction.type === 'income' ? 'text-neutral-900' : 'text-accent-500'}>
+                <td className="table-cell text-right font-medium">
+                  <span className={`mono ${transaction.type === 'income' ? 'text-green-400' : 'text-red-400'}`}>
                     {transaction.type === 'income' ? '+' : '−'}
                     {formatCurrency(Math.abs(transaction.amount))}
                   </span>

@@ -1,5 +1,4 @@
-
- -- Time Tracking Schema for Slack Bot
+-- Time Tracking Schema for Slack Bot
 -- Run this after the main schema.sql to add time tracking functionality
 
 -- Create projects table
@@ -9,7 +8,7 @@ CREATE TABLE IF NOT EXISTS projects (
     description TEXT,
     client_name VARCHAR(255),
     hourly_rate DECIMAL(10,2),
-    business_unit_id UUID REFERENCES business_units(id) ON DELETE CASCADE,
+    business_unit_id UUID REFERENCES business_units(id) ON DELETE CASCADE,ated n the 
     is_active BOOLEAN DEFAULT true,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -151,4 +150,7 @@ BEGIN
     CROSS JOIN project_breakdown pb;
 END;
 $$ LANGUAGE plpgsql;
+
+
+
 

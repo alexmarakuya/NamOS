@@ -5,24 +5,28 @@ module.exports = {
   ],
   theme: {
     extend: {
+      screens: {
+        '3xl': '1920px',  // Ultra-wide screens
+        '4xl': '2560px',  // 4K and ultra-wide monitors
+      },
       colors: {
-        // Darker mode Braun design palette - deeper warm grays and orange
+        // Dark theme neutral palette - force dark colors
         neutral: {
-          50: '#0f0f0f',  // deep black (main background)
-          100: '#1a1a1a', // very dark warm gray (component backgrounds)
-          200: '#2a2a2a', // dark warm gray (borders)
-          300: '#3d3d3d', // medium dark
-          400: '#525252', // medium gray
-          500: '#6b6b6b', // medium light
-          600: '#9a9a9a', // light gray (secondary text)
-          700: '#c4c4c4', // lighter
-          800: '#e0e0e0', // very light
-          900: '#f5f5f5', // off-white (primary text)
+          50: '#171717',  // dark background (was light)
+          100: '#262626', // dark component bg (was light)
+          200: '#404040', // dark borders (was light)
+          300: '#525252', // medium dark text
+          400: '#6b6b6b', // medium gray text
+          500: '#9a9a9a', // medium light text
+          600: '#c4c4c4', // light text
+          700: '#404040', // dark borders/dividers
+          800: '#262626', // dark card backgrounds
+          900: '#171717', // darkest background
         },
         accent: {
-          500: '#ff6b35', // Classic Braun orange
-          600: '#e55a2b',
-          700: '#cc4916',
+          500: '#92B590', // Medium sage green
+          600: '#7a9a78',
+          700: '#6b8669',
         },
         braun: {
           orange: '#ff6b35',

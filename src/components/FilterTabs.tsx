@@ -17,28 +17,27 @@ const FilterTabs: React.FC<FilterTabsProps> = ({ areas, activeFilter, onFilterCh
   ];
 
   return (
-    <div className="bg-neutral-100 border-b border-neutral-200">
-      <div className="flex flex-wrap">
-        {allAreas.map((area) => {
-          const isActive = activeFilter === area.id;
-          
-          return (
-            <button
-              key={area.id}
-              onClick={() => onFilterChange(area.id)}
-              className={`
-                px-6 py-3 text-sm font-medium braun-text
-                ${isActive 
-                  ? 'bg-accent-500 text-white font-semibold' 
-                  : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200 hover:text-neutral-700'
-                }
-              `              }
-            >
-              {area.name}
-            </button>
-          );
-        })}
-      </div>
+    <div className="flex flex-wrap gap-2">
+      {allAreas.map((area) => {
+        const isActive = activeFilter === area.id;
+        
+        return (
+          <button
+            key={area.id}
+            onClick={() => onFilterChange(area.id)}
+            className={`
+              px-4 text-sm font-medium rounded-lg transition-all duration-200 font-epilogue border
+              ${isActive
+                ? 'border-neutral-300 bg-neutral-100 text-neutral-900'
+                : 'border-neutral-200 bg-transparent text-neutral-800 hover:border-neutral-300 hover:bg-neutral-50 hover:text-neutral-900'
+              }
+            `}
+            style={{ paddingTop: '10px', paddingBottom: '6px' }}
+          >
+            {area.name}
+          </button>
+        );
+      })}
     </div>
   );
 };

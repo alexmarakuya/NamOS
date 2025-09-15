@@ -28,6 +28,155 @@ const app = new App({
 // Initialize database
 const db = new TimeTrackingDB();
 
+// Helper function to check if projects exist and guide user to create one if needed
+async function ensureProjectsExist(say, userId) {
+  try {
+    const projects = await db.getActiveProjects();
+    
+    if (!projects || projects.length === 0) {
+      await say(`🚨 **No Projects Found!**
+
+I noticed you don't have any projects set up yet. To properly track your time, you should create at least one project.
+
+**Quick Project Creation:**
+Send me a message like: \`create project "Website Development" for client "Acme Corp"\`
+
+**Or use this format:**
+\`create project "Project Name"\` (for internal projects)
+\`create project "Project Name" for "Client Name"\` (for client projects)
+
+**Examples:**
+• \`create project "Website Redesign" for client "TechCorp"\`
+• \`create project "Internal Documentation"\`
+• \`create project "Mobile App Development" for client "StartupXYZ"\`
+
+Once you have projects, I can help you track time more effectively! 🎯`);
+      return false;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Error checking projects:', error);
+    await say('⚠️ Unable to check projects. Please try again later.');
+    return false;
+  }
+}
+
+// Helper function to create a new project from user input
+async function createProjectFromMessage(message, say, client) {
+  try {
+    // Parse project creation message
+    const text = message.toLowerCase();
+    
+    // Patterns to match:
+    // "create project "Name" for client "Client""
+    // "create project "Name" for "Client""
+    // "create project "Name""
+    
+    const patterns = [
+      /create project ["']([^"']+)["'] for (?:client )?["']([^"']+)["']/i,
+      /create project ["']([^"']+)["']/i
+    ];
+    
+    let projectName = null;
+    let clientName = null;
+    
+    for (const pattern of patterns) {
+      const match = message.match(pattern);
+      if (match) {
+        projectName = match[1];
+        clientName = match[2] || null;
+        break;
+      }
+    }
+    
+    if (!projectName) {
+      await say(`❌ I couldn't understand the project format. Please use:
+
+**Format:**
+\`create project "Project Name"\`
+\`create project "Project Name" for client "Client Name"\`
+
+**Examples:**
+• \`create project "Website Development"\`
+• \`create project "Mobile App" for client "TechCorp"\``);
+      return false;
+    }
+    
+    // Get user info
+    const userInfo = await client.users.info({ user: message.user });
+    const userName = userInfo.user.username || userInfo.user.name;
+    
+    // Get or create a default business unit
+    let businessUnitId = null;
+    try {
+      // Try to get an existing business unit or create a default one
+      const { data: businessUnits } = await db.supabase
+        .from('business_units')
+        .select('id')
+        .eq('type', 'project')
+        .limit(1);
+      
+      if (businessUnits && businessUnits.length > 0) {
+        businessUnitId = businessUnits[0].id;
+      } else {
+        // Create a default business unit
+        const { data: newBU } = await db.supabase
+          .from('business_units')
+          .insert({
+            name: 'General Projects',
+            type: 'project',
+            color: '#6b7280'
+          })
+          .select()
+          .single();
+        
+        businessUnitId = newBU.id;
+      }
+    } catch (error) {
+      console.error('Error with business unit:', error);
+      await say('⚠️ Error setting up project structure. Please contact admin.');
+      return false;
+    }
+    
+    // Create the project
+    const projectData = {
+      name: projectName,
+      client_name: clientName,
+      description: `Project created by ${userName} via Slack bot`,
+      business_unit_id: businessUnitId,
+      is_active: true,
+      created_by: message.user
+    };
+    
+    const newProject = await db.createProject(projectData);
+    
+    const clientInfo = clientName ? ` for client **${clientName}**` : '';
+    await say(`🎉 **Project Created Successfully!**
+
+📁 **Project**: ${projectName}${clientInfo}
+✅ **Status**: Active
+👤 **Created by**: ${userName}
+
+You can now log time to this project! Try:
+\`spent 2 hours working on ${projectName}\`
+\`log 1.5 hours ${projectName} development\`
+
+Or use \`/log-time\` for step-by-step logging. 🚀`);
+    
+    return true;
+    
+  } catch (error) {
+    console.error('Error creating project:', error);
+    await say(`❌ **Error Creating Project**
+
+${error.message || 'Unknown error occurred'}
+
+Please try again or contact your admin if the problem persists.`);
+    return false;
+  }
+}
+
 // Helper functions
 function formatHours(hours) {
   const h = Math.floor(hours);
@@ -322,6 +471,12 @@ app.command('/log-time', async ({ command, ack, respond, client }) => {
   try {
     await ensureUserExists(command.user_id, client);
     
+    // Check if projects exist before starting time logging
+    const hasProjects = await ensureProjectsExist(respond, command.user_id);
+    if (!hasProjects) {
+      return; // User needs to create projects first
+    }
+    
     // Start conversational flow
     await respond({
       text: `Hi! 👋 Let's log some time. How many hours did you work? 
@@ -367,14 +522,7 @@ app.options('project_select', async ({ options, ack }) => {
       value: project.id
     }));
     
-    // Add "No Project" option
-    projectOptions.unshift({
-      text: {
-        type: 'plain_text',
-        text: 'No Project'
-      },
-      value: 'none'
-    });
+    // Note: Removed "No Project" option - project selection is now required
     
     await ack({
       options: projectOptions
@@ -465,6 +613,14 @@ app.command('/team-time', async ({ command, ack, respond }) => {
   }
 });
 
+// Project creation handler
+app.message(/create project/i, async ({ message, say, client }) => {
+  if (message.subtype || message.bot_id) return;
+  
+  console.log('🏗️ Project creation request:', message.text);
+  await createProjectFromMessage(message.text, say, client);
+});
+
 // AI-powered natural language time logging
 app.message(async ({ message, say, client }) => {
   // Skip if this is a bot message, already handled, or in a conversation
@@ -477,8 +633,15 @@ app.message(async ({ message, say, client }) => {
   const text = message.text.toLowerCase();
   if (/^(hi|hello|hey|thanks|help|status|summary)\s*/.test(text)) return;
   if (text.startsWith('/')) return; // Skip slash commands
+  if (/create project/i.test(text)) return; // Skip project creation (handled above)
   
   console.log('🤖 Analyzing message with AI:', message.text);
+  
+  // Check if projects exist before processing time entries
+  const hasProjects = await ensureProjectsExist(say, message.user);
+  if (!hasProjects) {
+    return; // User needs to create projects first
+  }
   
   try {
     await ensureUserExists(message.user, client);
@@ -501,6 +664,23 @@ app.message(async ({ message, say, client }) => {
           }
         }
         
+        // Validate project requirement
+        if (!aiResult.project_id) {
+          await say(`⚠️ **Project Required!**
+
+I understood your time entry (${aiResult.hours} hours: "${aiResult.description}"), but I need to know which project this time should be logged to.
+
+**Please try again with a project:**
+• "${message.text} for [project name]"
+• "${message.text} on [project name]"
+
+**Available projects:**
+${projects.map(p => `• ${p.name}${p.client_name ? ` (${p.client_name})` : ''}`).join('\n')}
+
+Or use \`/log-time\` for step-by-step guidance! 🎯`);
+          return;
+        }
+        
         // Create time entry
         const timeEntry = {
           user_id: message.user,
@@ -508,7 +688,7 @@ app.message(async ({ message, say, client }) => {
           hours: aiResult.hours,
           date: date,
           is_billable: aiResult.billable !== false,
-          project_id: aiResult.project_id || null,
+          project_id: aiResult.project_id,
           slack_channel_id: message.channel,
           slack_message_ts: message.ts
         };
@@ -749,7 +929,7 @@ What date was this for? You can say:
                 projectMessage += `**${index + 1}.** ${project.name}${clientInfo}\n`;
               });
               
-              projectMessage += `\nType the **number** of the project, or "none" if this doesn't belong to a specific project.`;
+              projectMessage += `\n⚠️ **Project selection is required** - Type the **number** of the project.`;
               
               // Store projects for reference
               state.data.availableProjects = projects;
@@ -774,9 +954,15 @@ What date was this for? You can say:
         const suggestedProject = state.data.suggestedProject;
         
         if (projectInput === 'none' || projectInput === 'no project') {
-          state.data.project_id = null;
-          state.step = 'waiting_for_date';
-          await say(`📋 No specific project selected.\n\nWhat date was this for? You can say:\n• "today"\n• "yesterday"\n• "Monday"\n• "2024-01-15"\n• Or just hit enter for today`);
+          await say(`❌ **Project Required!**
+
+Project selection is mandatory for all time entries. Please choose a project from the list above by typing its number.
+
+If you don't see your project, you can create one by saying:
+\`create project "Your Project Name"\`
+
+Or type \`cancel\` to exit this conversation.`);
+          return;
         } else {
           const projectNumber = parseInt(projectInput);
           
@@ -943,12 +1129,12 @@ app.message(/^(help|what\s*can\s*you\s*do)\s*\??$/i, async ({ say }) => {
   
   await say(`${aiStatus} I can help you track time in lots of ways! Here are some examples:
 
-**Natural Language (${openai ? 'AI-Enhanced' : 'Pattern-Based'}):**
-• "spent 2 hours coding"
-• "worked 1.5 hours on design"  
-• "put in half an hour debugging"
-• "did 3 hours of meetings"
-• "logged an hour writing docs"
+**Natural Language (${openai ? 'AI-Enhanced' : 'Pattern-Based'}) - Project Required:**
+• "spent 2 hours coding on Website Project"
+• "worked 1.5 hours on design for Mobile App"  
+• "put in half an hour debugging on API Project"
+• "did 3 hours of meetings on Client Portal"
+• "logged an hour writing docs for Documentation Project"
 ${openai ? '• "I worked from 9 to 5 on the website project with a lunch break"' : ''}
 
 **Conversational Logging:**
@@ -971,6 +1157,113 @@ ${openai ? '• "I worked from 9 to 5 on the website project with a lunch break"
 ${openai ? '🧠 **AI Features**: I can understand complex time descriptions, detect projects intelligently, and parse natural language with high accuracy!' : '⚡ **Smart Features**: I use pattern matching and keyword detection to understand your time entries!'}
 
 Just talk to me naturally! I understand lots of different ways to express time. 😊`);
+});
+
+// Helper function to detect if a message is likely a time logging attempt
+function isLikelyTimeLoggingAttempt(text) {
+  const timeKeywords = [
+    'hour', 'hours', 'hr', 'hrs', 'h',
+    'minute', 'minutes', 'min', 'mins', 'm',
+    'time', 'worked', 'work', 'spent', 'log', 'logged',
+    'did', 'put in', 'coding', 'development', 'meeting',
+    'call', 'project', 'client', 'task', 'debugging'
+  ];
+  
+  const numberPatterns = [
+    /\d+\.?\d*/, // Numbers like 2, 2.5, 1.25
+    /\d+:\d+/, // Time format like 2:30
+    /\d+h\s*\d*m?/, // Format like 2h 30m
+    /half|quarter|full/ // Word numbers
+  ];
+  
+  const lowerText = text.toLowerCase();
+  
+  // Check if it contains time-related keywords
+  const hasTimeKeywords = timeKeywords.some(keyword => lowerText.includes(keyword));
+  
+  // Check if it contains number patterns that might be time
+  const hasTimeNumbers = numberPatterns.some(pattern => pattern.test(text));
+  
+  // If it has both time keywords and numbers, it's likely a time logging attempt
+  return hasTimeKeywords && hasTimeNumbers;
+}
+
+// Fallback handler for unrecognized messages
+app.message(async ({ message, say, client }) => {
+  // Skip if this is a bot message or already handled by other patterns
+  if (message.subtype || message.bot_id) return;
+  
+  const state = global.conversationStates?.get(message.user);
+  if (state) return; // User is in a conversation flow
+  
+  const text = message.text.toLowerCase();
+  
+  // Skip if it's a command or greeting we handle elsewhere
+  if (text.startsWith('/')) return;
+  if (/^(hi|hello|hey|thanks|help|status|summary|create project)\s*/.test(text)) return;
+  
+  // Check if this looks like a failed time logging attempt
+  if (isLikelyTimeLoggingAttempt(message.text)) {
+    console.log('❓ Unrecognized time logging attempt:', message.text);
+    
+    await say(`🤔 **I couldn't understand that time entry format.**
+
+Here are some ways to log time that I understand:
+
+**Natural Language (with project):**
+• "spent 2 hours coding on Website Project"
+• "worked 1.5 hours on design for Mobile App"
+• "put in 3 hours of meetings on Client Project"
+• "did half an hour of debugging on API Project"
+
+**Structured Format (with project):**
+• "log 2.5 website development on Website Project"
+• "log 1h 30m client call for Acme Corp project"
+
+**Or use the step-by-step flow:**
+• \`/log-time\` - I'll guide you through it!
+
+**Need to create a project first?**
+• \`create project "Project Name"\`
+• \`create project "Website" for client "Acme Corp"\`
+
+Try rephrasing your message, or type \`help\` for more examples! 😊`);
+    
+    return;
+  }
+  
+  // For other unrecognized messages, provide general help
+  const helpMessages = [
+    `👋 I didn't quite understand that. I'm here to help you track time!
+
+Try saying something like:
+• "spent 2 hours coding"
+• \`/log-time\` for step-by-step logging
+• \`help\` for all my features`,
+    
+    `🤖 I'm not sure what you meant. Here's what I can help with:
+
+• **Log time**: "worked 3 hours on project"
+• **View time**: \`/my-time\` or \`/team-time\`
+• **Create projects**: \`create project "Name"\`
+• **Get help**: \`help\``,
+    
+    `😊 I didn't catch that! I'm a time tracking bot. 
+
+Quick examples:
+• "log 1.5 client meeting"
+• "spent half an hour debugging"
+• \`/log-time\` for guided entry
+
+Type \`help\` to see everything I can do!`
+  ];
+  
+  // Don't respond to every single message - only if it seems like they're trying to interact
+  const messageLength = message.text.trim().length;
+  if (messageLength > 3 && messageLength < 100) { // Reasonable message length
+    const randomHelp = helpMessages[Math.floor(Math.random() * helpMessages.length)];
+    await say(randomHelp);
+  }
 });
 
 app.message(/^(status|summary|how.*doing)\s*\??$/i, async ({ message, say }) => {
@@ -1001,18 +1294,19 @@ app.command('/time-help', async ({ ack, respond }) => {
     `• \`/my-time\` - View your time entries for today\n` +
     `• \`/team-time\` - View team time summary for today\n` +
     `• \`/time-help\` - Show this help message\n\n` +
-    `*Quick Logging:*\n` +
-    `Type \`log [time] [description]\` in any channel:\n` +
-    `• \`log 2.5 working on website redesign\`\n` +
-    `• \`log 1h 30m debugging API issues\`\n` +
-    `• \`log 45m team meeting\`\n\n` +
+    `*Quick Logging (Project Required):*\n` +
+    `Type \`log [time] [description] on [project]\` in any channel:\n` +
+    `• \`log 2.5 working on website redesign on Website Project\`\n` +
+    `• \`log 1h 30m debugging API issues on API Project\`\n` +
+    `• \`log 45m team meeting on Client Portal\`\n\n` +
     `*Time Formats:*\n` +
     `• Decimal hours: \`2.5\`, \`1.25\`\n` +
     `• Hours and minutes: \`2h 30m\`, \`1h 15m\`\n` +
     `• Colon format: \`2:30\`, \`1:15\`\n\n` +
     `*Tips:*\n` +
-    `• Use the full form (\`/log-time\`) to specify projects and billing\n` +
-    `• Quick logging defaults to billable time with no project\n` +
+    `• **Project selection is required** for all time entries\n` +
+    `• Use the full form (\`/log-time\`) for guided project selection\n` +
+    `• Create projects with: \`create project "Project Name"\`\n` +
     `• All times are logged for today unless specified otherwise`;
   
     await respond({

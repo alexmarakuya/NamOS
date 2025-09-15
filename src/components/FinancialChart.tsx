@@ -46,14 +46,23 @@ const FinancialChart: React.FC<FinancialChartProps> = ({ data, activeFilter }) =
   const closeModal = () => {
     setModalState(prev => ({ ...prev, isOpen: false }));
   };
-  return (
-    <div className="bg-neutral-100 border-b border-neutral-200 p-8">
-      <div className="mb-8">
-        <h2 className="text-xl font-medium text-neutral-900 mb-3 braun-text">Monthly Overview</h2>
-        <p className="text-sm text-neutral-600 braun-text">Financial performance across time • Click bars for category breakdown</p>
-      </div>
+          return (
+          <div>
+            <div className="mb-6">
+              <h2 className="text-lg font-medium text-white braun-text">
+                Financial Overview
+              </h2>
+              <p className="text-xs text-neutral-300 mt-1 braun-text">
+                Monthly income vs expenses across all business units
+                {activeFilter !== 'all' && (
+                  <span className="ml-2 px-2 py-1 bg-accent-900 text-accent-200 text-xs rounded-full braun-text">
+                    Filtered
+                  </span>
+                )}
+              </p>
+            </div>
 
-      <div className="h-80">
+            <div className="h-80">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart 
             data={data} 
@@ -68,34 +77,34 @@ const FinancialChart: React.FC<FinancialChartProps> = ({ data, activeFilter }) =
                 height="6"
                 patternTransform="rotate(45)"
                               >
-                  <rect width="6" height="6" fill="#f0f0f0"/>
-                  <line x1="0" y1="0" x2="0" y2="6" stroke="#9a9a9a" strokeWidth="0.5"/>
+                  <rect width="6" height="6" fill="transparent"/>
+                  <line x1="0" y1="0" x2="0" y2="6" stroke="#D4CFC1" strokeWidth="0.5"/>
                 </pattern>
             </defs>
             <XAxis 
               dataKey="name" 
               axisLine={false}
               tickLine={false}
-              tick={{ fill: '#9a9a9a', fontSize: 12, fontFamily: 'Inter, Helvetica, Arial, sans-serif', fontWeight: 500 }}
+              tick={{ fill: '#9ca3af', fontSize: 12, fontFamily: 'Inter, Helvetica, Arial, sans-serif', fontWeight: 500 }}
             />
             <YAxis 
               axisLine={false}
               tickLine={false}
-              tick={{ fill: '#9a9a9a', fontSize: 12, fontFamily: 'Inter, Helvetica, Arial, sans-serif', fontWeight: 500 }}
+              tick={{ fill: '#9ca3af', fontSize: 12, fontFamily: 'Inter, Helvetica, Arial, sans-serif', fontWeight: 500 }}
               tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
             />
             <Bar 
               dataKey="income" 
-              fill="url(#diagonalHatch)"
-              stroke="#9a9a9a"
-              strokeWidth="0.5"
+              fill="#92B590"
               name="Income"
               onClick={(data) => handleBarClick(data, 'income')}
               style={{ cursor: 'pointer' }}
             />
             <Bar 
               dataKey="expenses" 
-              fill="#ff6b35" 
+              fill="url(#diagonalHatch)"
+              stroke="#D4CFC1"
+              strokeWidth="0.5"
               name="Expenses"
               onClick={(data) => handleBarClick(data, 'expense')}
               style={{ cursor: 'pointer' }}
@@ -107,6 +116,10 @@ const FinancialChart: React.FC<FinancialChartProps> = ({ data, activeFilter }) =
       <div className="mt-8 pt-6 border-t border-neutral-200">
         <div className="flex items-center space-x-8 text-sm">
           <div className="flex items-center space-x-3">
+            <div className="w-4 h-4 bg-accent-500"></div>
+            <span className="text-neutral-600 braun-text font-medium">Income</span>
+          </div>
+          <div className="flex items-center space-x-3">
             <svg width="16" height="16">
               <defs>
                 <pattern 
@@ -116,16 +129,12 @@ const FinancialChart: React.FC<FinancialChartProps> = ({ data, activeFilter }) =
                   height="3"
                   patternTransform="rotate(45)"
                 >
-                  <rect width="3" height="3" fill="#f0f0f0"/>
-                  <line x1="0" y1="0" x2="0" y2="3" stroke="#9a9a9a" strokeWidth="0.3"/>
+                  <rect width="3" height="3" fill="transparent"/>
+                  <line x1="0" y1="0" x2="0" y2="3" stroke="#D4CFC1" strokeWidth="0.3"/>
                 </pattern>
               </defs>
-              <rect width="16" height="16" fill="url(#legendHatch)" stroke="#9a9a9a" strokeWidth="0.5"/>
+              <rect width="16" height="16" fill="url(#legendHatch)" stroke="#D4CFC1" strokeWidth="0.5"/>
             </svg>
-            <span className="text-neutral-600 braun-text font-medium">Income</span>
-          </div>
-          <div className="flex items-center space-x-3">
-            <div className="w-4 h-4 bg-accent-500"></div>
             <span className="text-neutral-600 braun-text font-medium">Expenses</span>
           </div>
         </div>

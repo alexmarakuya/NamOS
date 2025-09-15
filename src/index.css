@@ -1,18 +1,193 @@
+@import url('https://fonts.googleapis.com/css2?family=Epilogue:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Sometype+Mono:wght@400;500;600&display=swap');
+
+/* Dark theme forced - v2.0 */
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
+/* Root three-color theme variables - Light Background Design */
+:root {
+  --bg-primary: #F2EFE6;    /* Lighter cream background */
+  --bg-secondary: #F2EFE6;  /* Lighter cream card backgrounds */
+  --bg-tertiary: #92B590;   /* Medium sage green elevated surfaces */
+  --text-primary: #1A2E1B;  /* Darker forest green text */
+  --text-secondary: #1A2E1B; /* Darker forest green secondary text */
+  --text-tertiary: #92B590;  /* Medium sage green muted text */
+  --border-primary: #E8E3D7; /* Lighter beige subtle borders */
+  --border-secondary: #E8E3D7; /* Lighter beige stronger borders */
+  --accent: #92B590;        /* Medium sage green accent */
+  --accent-secondary: #2B3A2C; /* Dark forest green accent */
+  --success: #92B590;       /* Medium sage green */
+  --warning: #92B590;       /* Medium sage green */
+  --error: #92B590;         /* Medium sage green */
+  --chart-blue: #92B590;    /* Medium sage green */
+  --chart-purple: #92B590;  /* Medium sage green */
+  --chart-green: #92B590;   /* Medium sage green */
+  --chart-orange: #92B590;  /* Medium sage green */
+}
+
+/* Override Tailwind's default neutral colors with our light theme */
+.bg-neutral-50 { background-color: #F2EFE6 !important; }
+.bg-neutral-100 { background-color: #F2EFE6 !important; }
+.bg-neutral-200 { background-color: #92B590 !important; }
+.bg-neutral-300 { background-color: #9ca3af !important; }
+.bg-neutral-400 { background-color: #6b7280 !important; }
+.bg-neutral-700 { background-color: #92B590 !important; }
+.bg-neutral-800 { background-color: #92B590 !important; }
+.bg-neutral-900 { background-color: #2B3A2C !important; }
+.bg-cream-dark { background-color: #E8E3D7 !important; }
+
+/* Hover state overrides */
+.hover\:bg-cream-dark:hover { background-color: #E8E3D7 !important; }
+.hover\:bg-neutral-300:hover { background-color: #9ca3af !important; }
+.hover\:bg-neutral-400:hover { background-color: #6b7280 !important; }
+
+.text-neutral-200 { color: #2B3A2C !important; }
+.text-neutral-300 { color: #2B3A2C !important; }
+.text-neutral-400 { color: #2B3A2C !important; }
+.text-neutral-500 { color: #6b7280 !important; }
+.text-neutral-600 { color: #4b5563 !important; }
+.text-neutral-700 { color: #374151 !important; }
+.text-neutral-800 { color: #1A2E1B !important; }
+.text-neutral-900 { color: #1A2E1B !important; }
+
+.border-neutral-200 { border-color: #E8E3D7 !important; }
+.border-neutral-700 { border-color: #E8E3D7 !important; }
+
+.text-white { color: #1A2E1B !important; }
+
+/* Additional light theme overrides */
+.bg-white { background-color: #ffffff !important; }
+.hover\:bg-neutral-50:hover { background-color: #F2EFE6 !important; }
+.hover\:bg-neutral-100:hover { background-color: #F2EFE6 !important; }
+.hover\:bg-neutral-200:hover { background-color: #92B590 !important; }
+.hover\:bg-neutral-700:hover { background-color: #92B590 !important; }
+
+/* Light theme color overrides */
+.bg-blue-50 { background-color: #F2EFE6 !important; }
+.bg-blue-600 { background-color: #92B590 !important; }
+.bg-blue-700 { background-color: #92B590 !important; }
+.hover\:bg-blue-700:hover { background-color: #92B590 !important; }
+
+.text-blue-400 { color: #92B590 !important; }
+.text-blue-600 { color: #92B590 !important; }
+
+/* Green theme overrides */
+.text-green-400 { color: #92B590 !important; }
+.text-green-200 { color: #92B590 !important; }
+.bg-green-900 { background-color: #2B3A2C !important; }
+
+/* Red overrides */
+.text-red-400 { color: #92B590 !important; }
+
+/* Purple overrides */
+.text-purple-400 { color: #92B590 !important; }
+
+/* Accent color overrides */
+.bg-accent-500 { background-color: var(--accent) !important; }
+.bg-accent-600 { background-color: #7a9a78 !important; }
+.bg-accent-900 { background-color: #F2EFE6 !important; }
+.hover\:bg-accent-600:hover { background-color: #7a9a78 !important; }
+.text-accent-200 { color: #92B590 !important; }
+.text-accent-100 { color: #2B3A2C !important; }
+.border-accent-500 { border-color: var(--accent) !important; }
+
+/* Gray theme overrides for light background */
+.bg-gray-600 { background-color: #92B590 !important; }
+.bg-gray-700 { background-color: #92B590 !important; }
+.bg-gray-800 { background-color: #92B590 !important; }
+.hover\:bg-gray-600:hover { background-color: #92B590 !important; }
+.hover\:bg-gray-700:hover { background-color: #2B3A2C !important; }
+.text-gray-300 { color: #1A2E1B !important; }
+.text-gray-400 { color: #92B590 !important; }
+.border-gray-600 { border-color: #E8E3D7 !important; }
+
+/* Force main content area to match sidebar exactly */
+.dashboard-main,
+.dashboard-main > div {
+  background-color: var(--bg-primary) !important;
+}
+
+  .dashboard-main {
+    margin-left: 120px !important; /* 64px sidebar width + 56px for balanced composition */
+    margin-right: 80px !important; /* Reduced right margin */
+    max-width: calc(100vw - 200px) !important; /* Full viewport minus left and right margins */
+  }
+
+  /* Responsive margins for smaller screens */
+  @media (max-width: 1536px) {
+    .dashboard-main {
+      margin-left: 100px !important; /* Reduced left margin for smaller screens */
+      margin-right: 60px !important;
+      max-width: calc(100vw - 160px) !important;
+    }
+  }
+
+  @media (max-width: 1280px) {
+    .dashboard-main {
+      margin-left: 88px !important; /* Further reduced left margin */
+      margin-right: 48px !important;
+      max-width: calc(100vw - 136px) !important;
+    }
+  }
+
+  @media (max-width: 1024px) {
+    .dashboard-main {
+      margin-left: 80px !important; /* Balanced for tablet screens */
+      margin-right: 32px !important;
+      max-width: calc(100vw - 112px) !important;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .dashboard-main {
+      margin-left: 76px !important; /* Maintain balance on mobile */
+      margin-right: 24px !important;
+      max-width: calc(100vw - 100px) !important;
+    }
+  }
+
+  @media (max-width: 640px) {
+    .dashboard-main {
+      margin-left: 72px !important; /* Minimum balanced margin */
+      margin-right: 16px !important;
+      max-width: calc(100vw - 88px) !important;
+    }
+  }
+
+/* Force all text to be readable on dark backgrounds */
+* {
+  color: inherit;
+}
+
+/* Ensure proper contrast for all elements */
+body * {
+  background-color: inherit;
+}
+
+/* Base dark theme */
+html {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+}
 
 body {
   margin: 0;
-  font-family: 'Inter', 'Helvetica', Arial, sans-serif;
+  font-family: 'Epilogue', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #0f0f0f;
-  color: #f5f5f5;
-  line-height: 1.4;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  line-height: 1.5;
   font-weight: 400;
+  font-size: 15px;
+}
+
+#root {
+  background-color: var(--bg-primary);
+  min-height: 100vh;
 }
 
 /* Swiss minimalism principles */
@@ -36,12 +211,12 @@ body {
   background: #3d3d3d;
 }
 
-/* Braun typography hierarchy */
+/* Typography hierarchy with Epilogue */
 h1, h2, h3, h4, h5, h6 {
-  font-weight: 500;
-  letter-spacing: -0.01em;
+  font-weight: 600;
+  letter-spacing: -0.02em;
   margin: 0;
-  font-family: 'Inter', 'Helvetica', Arial, sans-serif;
+  font-family: 'Epilogue', sans-serif;
 }
 
 /* Braun design principles */
@@ -73,11 +248,273 @@ button:focus,
 input:focus,
 select:focus,
 textarea:focus {
-  outline: 2px solid #ff6b35;
+  outline: 2px solid #6b7280;
   outline-offset: 1px;
 }
 
-code {
-  font-family: Monaco, Consolas, monospace;
+code, pre, .mono {
+  font-family: 'Sometype Mono', Monaco, Consolas, monospace;
   font-size: 0.9em;
+  font-weight: 400;
+}
+
+/* Font utility classes */
+.font-epilogue {
+  font-family: 'Epilogue', sans-serif;
+}
+
+.font-mono {
+  font-family: 'Sometype Mono', Monaco, Consolas, monospace;
+}
+
+/* Enhanced number styling */
+.number {
+  font-family: 'Sometype Mono', monospace;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Component layer styles */
+@layer components {
+  /* Dashboard layout */
+  .dashboard-container {
+    @apply min-h-screen text-sm;
+    background-color: var(--bg-primary) !important;
+    color: var(--text-primary);
+  }
+
+        .dashboard-sidebar {
+          background-color: var(--bg-primary) !important;
+          border-color: var(--border-primary);
+        }
+
+  .dashboard-main {
+    background-color: var(--bg-primary) !important;
+    min-height: 100vh;
+    padding: 16px;
+  }
+
+         /* Data section container with off-white background */
+         .data-section-container {
+           background-color: rgb(252, 252, 250);
+           padding: 0;
+           margin: 0;
+           border-radius: 28px;
+           overflow: hidden;
+           display: flex;
+           flex-direction: column;
+           gap: 24px;
+           height: calc(100vh - 200px);
+           flex: 1;
+         }
+
+         /* Modern card design */
+         .dashboard-card {
+           padding: 24px;
+         }
+
+
+  /* Grid system */
+  .dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 24px;
+    margin-bottom: 24px;
+  }
+
+  /* Responsive breakpoints for stats grid */
+  @media (max-width: 1024px) {
+    .dashboard-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (max-width: 640px) {
+    .dashboard-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .dashboard-grid-large {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 24px;
+  }
+
+  /* Card components */
+  .card {
+    @apply bg-neutral-800 border border-neutral-700;
+  }
+
+  .card-header {
+    @apply border-b border-neutral-700 bg-neutral-800;
+  }
+
+  /* Navigation */
+  .nav-item {
+    @apply text-neutral-300 hover:text-white hover:bg-neutral-700;
+  }
+
+  .nav-item-active {
+    @apply bg-accent-500 text-white;
+  }
+
+  /* Tables */
+  .table-container {
+    @apply bg-neutral-800 border border-neutral-700;
+  }
+
+  .table-header {
+    @apply bg-neutral-700 border-b border-neutral-700;
+    padding: 0.75rem 1.5rem !important;
+  }
+
+  .table-row {
+    @apply border-b border-neutral-700 hover:bg-neutral-700;
+  }
+
+         .table-cell {
+           @apply text-neutral-200;
+           font-size: 15px;
+           padding: 0.75rem 1.5rem !important;
+         }
+
+         .table-cell-header {
+           @apply text-neutral-300 font-medium;
+           font-size: 13px;
+           padding: 0.75rem 1.5rem !important;
+         }
+
+  /* Buttons */
+  .btn-primary {
+    @apply bg-accent-500 text-white hover:bg-accent-600;
+  }
+
+  .btn-secondary {
+    @apply bg-neutral-700 text-neutral-200 hover:bg-neutral-600;
+  }
+
+  /* Filters */
+  .filter-container {
+    @apply bg-neutral-800 border-b border-neutral-700;
+    padding: 1rem 1.5rem !important;
+  }
+
+  .filter-button {
+    @apply bg-neutral-700 text-neutral-300 hover:bg-neutral-600 hover:text-white text-sm;
+    padding: 0.5rem 1rem !important;
+  }
+
+  .filter-button-active {
+    @apply bg-accent-500 text-white text-sm;
+    padding: 0.5rem 1rem !important;
+  }
+
+         /* Modern stat cards with Swiss minimal top border */
+         .stat-card {
+           padding: 24px 24px 24px 0;
+           position: relative;
+           overflow: hidden;
+           border-top: 1px solid var(--border-primary);
+         }
+
+
+  .stat-title {
+    color: var(--text-secondary);
+    font-family: 'Epilogue', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 12px;
+  }
+
+         .stat-value {
+           color: var(--text-primary);
+           font-family: 'Sometype Mono', monospace;
+           font-size: 35px;
+           font-weight: 400;
+           line-height: 1.1;
+           margin-bottom: 8px;
+           letter-spacing: -0.01em;
+           font-variant-numeric: tabular-nums;
+         }
+
+  .stat-change {
+    font-size: 13px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+
+  .stat-change-positive {
+    @apply text-green-400;
+  }
+
+  .stat-change-negative {
+    @apply text-red-400;
+  }
+
+  .stat-change-neutral {
+    @apply text-neutral-300;
+  }
+}
+
+/* Custom dropdown scrollbar positioning */
+.dropdown-scrollbar {
+  padding-right: 4px;
+}
+
+.dropdown-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.dropdown-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.dropdown-scrollbar::-webkit-scrollbar-thumb {
+  background-color: #d1d5db;
+  border-radius: 4px;
+  border: 1px solid transparent;
+}
+
+.dropdown-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: #9ca3af;
+}
+
+/* Firefox scrollbar */
+.dropdown-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #d1d5db transparent;
+}
+
+/* Hide scrollbar for Kanban board */
+.kanban-container {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* Internet Explorer 10+ */
+}
+
+.kanban-container::-webkit-scrollbar {
+  display: none; /* WebKit */
+}
+
+/* Prevent flashing during drag operations and updates */
+.kanban-column {
+  will-change: transform;
+  backface-visibility: hidden;
+}
+
+/* Smooth transitions for task cards */
+.task-card {
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+  transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+/* Prevent layout shifts during updates */
+.task-list {
+  contain: layout style;
 }
