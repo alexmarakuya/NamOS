@@ -89,3 +89,4 @@ GRANT SELECT ON public.clients TO anon;
 COMMENT ON TABLE public.clients IS 'Client information and status tracking';
 COMMENT ON COLUMN public.clients.status IS 'Client status: leads, onboarding, active, on-hold, off-boarded';
 
+

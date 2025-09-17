@@ -182,16 +182,13 @@ function FinancialApp() {
   }
 
   return (
-    <div className="space-y-6">
+    <div>
       {/* Header */}
       <div className="flex justify-between items-center pt-4">
         <div>
-          <h1 className="text-2xl font-semibold text-white mb-1 font-epilogue">
+          <h1 className="text-2xl font-semibold text-white mb-1 font-dm-sans">
             Financial Dashboard
           </h1>
-          <p className="text-sm text-neutral-600 font-epilogue">
-            Overview of your financial performance
-          </p>
         </div>
         <div className="flex space-x-4">
           {/* Areas Filter Dropdown */}
@@ -200,7 +197,7 @@ function FinancialApp() {
               onClick={() => {
                 setAreaDropdownOpen(!areaDropdownOpen);
               }}
-              className="flex items-center space-x-3 px-4 border border-neutral-200 hover:border-neutral-300 bg-transparent hover:bg-cream-dark text-neutral-500 hover:text-neutral-600 text-sm rounded-lg transition-colors duration-200 ease-in-out font-epilogue"
+              className="flex items-center space-x-3 px-4 border border-neutral-200 hover:border-neutral-300 bg-transparent hover:bg-cream-dark text-neutral-500 hover:text-neutral-600 text-sm rounded-lg transition-colors duration-200 ease-in-out font-dm-sans"
               style={{ paddingTop: '10px', paddingBottom: '6px' }}
             >
               {activeFilter === 'all' ? (
@@ -222,7 +219,7 @@ function FinancialApp() {
                     handleFilterChange('all');
                     closeAreaDropdown();
                   }}
-                  className={`w-full text-left px-3 py-3 text-sm hover:bg-cream-dark transition-colors font-epilogue rounded-md ${
+                  className={`w-full text-left px-3 py-3 text-sm hover:bg-cream-dark transition-colors font-dm-sans rounded-md ${
                     activeFilter === 'all' ? 'bg-neutral-100 text-neutral-900' : 'text-neutral-700'
                   }`}
                 >
@@ -235,7 +232,7 @@ function FinancialApp() {
                       handleFilterChange(area.id);
                       setAreaDropdownOpen(false);
                     }}
-                    className={`w-full text-left px-3 py-3 text-sm hover:bg-cream-dark transition-colors font-epilogue rounded-md ${
+                    className={`w-full text-left px-3 py-3 text-sm hover:bg-cream-dark transition-colors font-dm-sans rounded-md ${
                       activeFilter === area.id ? 'bg-neutral-100 text-neutral-900' : 'text-neutral-700'
                     }`}
                   >
@@ -253,7 +250,7 @@ function FinancialApp() {
 
           <button 
             onClick={() => setIsAddModalOpen(true)}
-            className="px-4 bg-accent-500 hover:bg-accent-600 text-white text-sm font-medium rounded-lg transition-colors duration-200 ease-in-out font-epilogue"
+            className="px-4 bg-accent-500 hover:bg-accent-600 text-white text-sm font-medium rounded-lg transition-colors duration-200 ease-in-out font-dm-sans"
             style={{ paddingTop: '10px', paddingBottom: '6px' }}
           >
             Add Transaction

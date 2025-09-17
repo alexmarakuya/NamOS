@@ -104,7 +104,7 @@ function AddProjectModal({ businessUnits, onClose, onSubmit, editProject, onDele
       <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 className="text-xl font-semibold text-gray-900 font-epilogue">
+          <h2 className="text-xl font-semibold text-gray-900 font-dm-sans">
             {editProject ? 'Edit Project' : 'Add New Project'}
           </h2>
           <button
@@ -130,7 +130,7 @@ function AddProjectModal({ businessUnits, onClose, onSubmit, editProject, onDele
               required
               value={formData.name}
               onChange={(e) => handleChange('name', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent font-epilogue"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent font-dm-sans"
               placeholder="Enter project name..."
             />
           </div>
@@ -145,7 +145,7 @@ function AddProjectModal({ businessUnits, onClose, onSubmit, editProject, onDele
               rows={3}
               value={formData.description}
               onChange={(e) => handleChange('description', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent font-epilogue"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent font-dm-sans"
               placeholder="Enter project description..."
             />
           </div>
@@ -163,21 +163,21 @@ function AddProjectModal({ businessUnits, onClose, onSubmit, editProject, onDele
                     type="text"
                     value={newClientName}
                     onChange={(e) => setNewClientName(e.target.value)}
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent font-epilogue"
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent font-dm-sans"
                     placeholder="Enter new client name..."
                     onKeyDown={(e) => e.key === 'Enter' && handleAddNewClient()}
                   />
                   <button
                     type="button"
                     onClick={handleAddNewClient}
-                    className="px-3 py-2 bg-accent-500 text-white rounded-lg hover:bg-accent-600 transition-colors"
+                    className="btn-xs bg-accent-500 text-white rounded-lg hover:bg-accent-600 transition-colors"
                   >
                     Add
                   </button>
                   <button
                     type="button"
                     onClick={() => setShowNewClientInput(false)}
-                    className="px-3 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
+                    className="btn-xs bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition-colors"
                   >
                     Cancel
                   </button>
@@ -187,7 +187,7 @@ function AddProjectModal({ businessUnits, onClose, onSubmit, editProject, onDele
                   <button
                     type="button"
                     onClick={() => setClientDropdownOpen(!clientDropdownOpen)}
-                    className="w-full px-3 py-1.5 text-sm font-medium rounded-lg transition-all duration-200 font-epilogue border border-neutral-200 bg-white text-neutral-800 hover:border-neutral-300 hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent text-left flex items-center justify-between"
+                    className="w-full px-3 py-1.5 text-sm font-medium rounded-lg transition-all duration-200 font-dm-sans border border-neutral-200 bg-white text-neutral-800 hover:border-neutral-300 hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent text-left flex items-center justify-between"
                   >
                     <span className={formData.client_name ? 'text-neutral-900' : 'text-neutral-500'}>
                       {formData.client_name || 'Select client...'}
@@ -205,7 +205,7 @@ function AddProjectModal({ businessUnits, onClose, onSubmit, editProject, onDele
                           handleClientSelect('');
                           setClientDropdownOpen(false);
                         }}
-                        className="w-full px-3 py-2 text-left text-sm text-neutral-500 hover:bg-neutral-50 transition-colors font-epilogue"
+                        className="w-full px-3 py-2 text-left text-sm text-neutral-500 hover:bg-neutral-50 transition-colors font-dm-sans"
                       >
                         Select client...
                       </button>
@@ -217,7 +217,7 @@ function AddProjectModal({ businessUnits, onClose, onSubmit, editProject, onDele
                             handleClientSelect(client);
                             setClientDropdownOpen(false);
                           }}
-                          className="w-full px-3 py-2 text-left text-sm text-neutral-800 hover:bg-neutral-50 transition-colors font-epilogue"
+                          className="w-full px-3 py-2 text-left text-sm text-neutral-800 hover:bg-neutral-50 transition-colors font-dm-sans"
                         >
                           {client}
                         </button>
@@ -228,7 +228,7 @@ function AddProjectModal({ businessUnits, onClose, onSubmit, editProject, onDele
                           handleClientSelect('__new__');
                           setClientDropdownOpen(false);
                         }}
-                        className="w-full px-3 py-2 text-left text-sm text-accent-600 hover:bg-neutral-50 transition-colors font-epilogue border-t border-neutral-200"
+                        className="w-full px-3 py-2 text-left text-sm text-accent-600 hover:bg-neutral-50 transition-colors font-dm-sans border-t border-neutral-200"
                       >
                         + Add new client
                       </button>
@@ -247,7 +247,7 @@ function AddProjectModal({ businessUnits, onClose, onSubmit, editProject, onDele
                 <button
                   type="button"
                   onClick={() => setBusinessUnitDropdownOpen(!businessUnitDropdownOpen)}
-                  className="w-full px-3 py-1.5 text-sm font-medium rounded-lg transition-all duration-200 font-epilogue border border-neutral-200 bg-white text-neutral-800 hover:border-neutral-300 hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent text-left flex items-center justify-between"
+                  className="w-full px-3 py-1.5 text-sm font-medium rounded-lg transition-all duration-200 font-dm-sans border border-neutral-200 bg-white text-neutral-800 hover:border-neutral-300 hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent text-left flex items-center justify-between"
                 >
                   <span className={formData.business_unit_id ? 'text-neutral-900' : 'text-neutral-500'}>
                     {businessUnits.find(unit => unit.id === formData.business_unit_id)?.name || 'Select business unit...'}
@@ -265,7 +265,7 @@ function AddProjectModal({ businessUnits, onClose, onSubmit, editProject, onDele
                         handleChange('business_unit_id', '');
                         setBusinessUnitDropdownOpen(false);
                       }}
-                      className="w-full px-3 py-2 text-left text-sm text-neutral-500 hover:bg-neutral-50 transition-colors font-epilogue"
+                      className="w-full px-3 py-2 text-left text-sm text-neutral-500 hover:bg-neutral-50 transition-colors font-dm-sans"
                     >
                       Select business unit...
                     </button>
@@ -277,7 +277,7 @@ function AddProjectModal({ businessUnits, onClose, onSubmit, editProject, onDele
                           handleChange('business_unit_id', unit.id);
                           setBusinessUnitDropdownOpen(false);
                         }}
-                        className="w-full px-3 py-2 text-left text-sm text-neutral-800 hover:bg-neutral-50 transition-colors font-epilogue"
+                        className="w-full px-3 py-2 text-left text-sm text-neutral-800 hover:bg-neutral-50 transition-colors font-dm-sans"
                       >
                         {unit.name}
                       </button>
@@ -297,7 +297,7 @@ function AddProjectModal({ businessUnits, onClose, onSubmit, editProject, onDele
               <button
                 type="button"
                 onClick={() => setStatusDropdownOpen(!statusDropdownOpen)}
-                className="w-full px-3 py-1.5 text-sm font-medium rounded-lg transition-all duration-200 font-epilogue border border-neutral-200 bg-white text-neutral-800 hover:border-neutral-300 hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent text-left flex items-center justify-between"
+                className="w-full px-3 py-1.5 text-sm font-medium rounded-lg transition-all duration-200 font-dm-sans border border-neutral-200 bg-white text-neutral-800 hover:border-neutral-300 hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent text-left flex items-center justify-between"
               >
                 <span className="text-neutral-900 capitalize">
                   {formData.status.replace('_', ' ')}
@@ -322,7 +322,7 @@ function AddProjectModal({ businessUnits, onClose, onSubmit, editProject, onDele
                         handleChange('status', status.value);
                         setStatusDropdownOpen(false);
                       }}
-                      className="w-full px-3 py-2 text-left text-sm text-neutral-800 hover:bg-neutral-50 transition-colors font-epilogue"
+                      className="w-full px-3 py-2 text-left text-sm text-neutral-800 hover:bg-neutral-50 transition-colors font-dm-sans"
                     >
                       {status.label}
                     </button>
@@ -342,7 +342,7 @@ function AddProjectModal({ businessUnits, onClose, onSubmit, editProject, onDele
               id="deadline"
               value={formData.deadline}
               onChange={(e) => handleChange('deadline', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent font-epilogue"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent font-dm-sans"
             />
           </div>
 
@@ -359,7 +359,7 @@ function AddProjectModal({ businessUnits, onClose, onSubmit, editProject, onDele
                     }
                   }
                 }}
-                className="px-4 py-2 text-sm font-medium text-white bg-red-500 rounded-lg hover:bg-red-600 transition-colors font-epilogue"
+                className="px-4 py-2 text-sm font-medium text-white bg-red-500 rounded-lg hover:bg-red-600 transition-colors font-dm-sans"
               >
                 Delete Project
               </button>
@@ -368,13 +368,13 @@ function AddProjectModal({ businessUnits, onClose, onSubmit, editProject, onDele
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 text-sm font-medium text-neutral-500 hover:text-neutral-600 bg-transparent border border-neutral-200 hover:border-neutral-300 rounded-lg hover:bg-cream-dark transition-colors font-epilogue"
+                className="px-4 py-2 text-sm font-medium text-neutral-500 hover:text-neutral-600 bg-transparent border border-neutral-200 hover:border-neutral-300 rounded-lg hover:bg-cream-dark transition-colors font-dm-sans"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="px-4 py-2 text-sm font-medium text-white bg-accent-500 rounded-lg hover:bg-accent-600 transition-colors font-epilogue"
+                className="px-4 py-2 text-sm font-medium text-white bg-accent-500 rounded-lg hover:bg-accent-600 transition-colors font-dm-sans"
               >
                 {editProject ? 'Update Project' : 'Create Project'}
               </button>

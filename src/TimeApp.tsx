@@ -408,18 +408,17 @@ function TimeApp() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center pt-4">
-        <div>
-          <h1 className="text-2xl font-semibold text-white mb-1 font-epilogue">
-            Timesheet Dashboard
-          </h1>
-          <p className="text-sm text-neutral-600 font-epilogue">
-            Track team productivity and billable hours
-          </p>
-        </div>
-        <div className="flex space-x-4">
+    <div className="flex-1 flex flex-col min-w-0 px-6 py-3" style={{ backgroundColor: 'transparent' }}>
+      {/* Header and Stats Container */}
+      <div>
+        {/* Header */}
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <h1 className="text-2xl font-semibold text-white mb-1 font-dm-sans">
+              Timesheet Dashboard
+            </h1>
+          </div>
+          <div className="flex space-x-4">
           {/* Time Filter Dropdown */}
           <div className="relative" ref={timeDropdownRef}>
             <button
@@ -428,7 +427,7 @@ function TimeApp() {
                 setProjectDropdownOpen(false);
                 setTeamDropdownOpen(false);
               }}
-              className="flex items-center space-x-3 px-4 border border-neutral-200 hover:border-neutral-300 bg-transparent hover:bg-cream-dark text-neutral-500 hover:text-neutral-600 text-sm rounded-lg transition-colors duration-200 ease-in-out font-epilogue"
+              className="flex items-center space-x-3 px-4 border border-neutral-200 hover:border-neutral-300 bg-transparent hover:bg-cream-dark text-neutral-500 hover:text-neutral-600 text-sm rounded-lg transition-colors duration-200 ease-in-out font-dm-sans"
               style={{ paddingTop: '10px', paddingBottom: '6px' }}
             >
               <div className="w-6 h-6 flex items-center justify-center" style={{ transform: 'translateY(-2px)' }}>
@@ -446,7 +445,7 @@ function TimeApp() {
                     handleTimeFilterChange('month');
                     closeTimeDropdown();
                   }}
-                  className={`w-full flex items-center space-x-3 px-3 py-3 hover:bg-cream-dark text-left transition-colors font-epilogue rounded-md ${
+                  className={`w-full flex items-center space-x-3 px-3 py-3 hover:bg-cream-dark text-left transition-colors font-dm-sans rounded-md ${
                     timeFilter === 'month' ? 'bg-neutral-100 text-neutral-900' : 'text-neutral-700'
                   }`}
                 >
@@ -457,7 +456,7 @@ function TimeApp() {
                     handleTimeFilterChange('week');
                     closeTimeDropdown();
                   }}
-                  className={`w-full flex items-center space-x-3 px-3 py-3 hover:bg-cream-dark text-left transition-colors font-epilogue rounded-md ${
+                  className={`w-full flex items-center space-x-3 px-3 py-3 hover:bg-cream-dark text-left transition-colors font-dm-sans rounded-md ${
                     timeFilter === 'week' ? 'bg-neutral-100 text-neutral-900' : 'text-neutral-700'
                   }`}
                 >
@@ -475,7 +474,7 @@ function TimeApp() {
                 setTeamDropdownOpen(false);
                 setTimeDropdownOpen(false);
               }}
-                    className="flex items-center space-x-3 px-4 border border-neutral-200 hover:border-neutral-300 bg-transparent hover:bg-cream-dark text-neutral-500 hover:text-neutral-600 text-sm rounded-lg transition-colors duration-200 ease-in-out font-epilogue"
+                    className="flex items-center space-x-3 px-4 border border-neutral-200 hover:border-neutral-300 bg-transparent hover:bg-cream-dark text-neutral-500 hover:text-neutral-600 text-sm rounded-lg transition-colors duration-200 ease-in-out font-dm-sans"
                     style={{ paddingTop: '10px', paddingBottom: '6px' }}
                   >
                     <div className="w-6 h-6 flex items-center justify-center" style={{ transform: 'translateY(-2px)' }}>
@@ -514,7 +513,7 @@ function TimeApp() {
                     handleFilterChange('all');
                     closeProjectDropdown();
                   }}
-                  className={`w-full flex items-center space-x-3 px-3 py-3 hover:bg-cream-dark text-left transition-colors font-epilogue rounded-md ${
+                  className={`w-full flex items-center space-x-3 px-3 py-3 hover:bg-cream-dark text-left transition-colors font-dm-sans rounded-md ${
                     activeFilter === 'all' ? 'bg-neutral-100 text-neutral-900' : 'text-neutral-700'
                   }`}
                 >
@@ -559,7 +558,7 @@ function TimeApp() {
                             handleFilterChange(project.id);
                             closeProjectDropdown();
                           }}
-                          className={`w-full flex items-center space-x-3 px-3 py-3 ml-2 hover:bg-cream-dark text-left transition-colors font-epilogue rounded-md ${
+                          className={`w-full flex items-center space-x-3 px-3 py-3 ml-2 hover:bg-cream-dark text-left transition-colors font-dm-sans rounded-md ${
                             activeFilter === project.id ? 'bg-neutral-100 text-neutral-900' : 'text-neutral-700'
                           }`}
                         >
@@ -600,7 +599,7 @@ function TimeApp() {
                 setProjectDropdownOpen(false);
                 setTimeDropdownOpen(false);
               }}
-                    className="flex items-center space-x-3 px-4 border border-neutral-200 hover:border-neutral-300 bg-transparent hover:bg-cream-dark text-neutral-500 hover:text-neutral-600 text-sm rounded-lg transition-colors duration-200 ease-in-out font-epilogue"
+                    className="flex items-center space-x-3 px-4 border border-neutral-200 hover:border-neutral-300 bg-transparent hover:bg-cream-dark text-neutral-500 hover:text-neutral-600 text-sm rounded-lg transition-colors duration-200 ease-in-out font-dm-sans"
                     style={{ paddingTop: '10px', paddingBottom: '6px' }}
                   >
                     <div className="w-6 h-6 flex items-center justify-center" style={{ transform: 'translateY(-2px)' }}>
@@ -626,7 +625,7 @@ function TimeApp() {
                     handleUserFilterChange('all');
                     closeTeamDropdown();
                   }}
-                  className={`w-full flex items-center space-x-3 px-3 py-3 hover:bg-cream-dark text-left transition-colors font-epilogue rounded-md ${
+                  className={`w-full flex items-center space-x-3 px-3 py-3 hover:bg-cream-dark text-left transition-colors font-dm-sans rounded-md ${
                     activeUser === 'all' ? 'bg-neutral-100 text-neutral-900' : 'text-neutral-700'
                   }`}
                 >
@@ -639,7 +638,7 @@ function TimeApp() {
                       handleUserFilterChange(member.id);
                       closeTeamDropdown();
                     }}
-                    className={`w-full flex items-center space-x-3 px-3 py-3 hover:bg-cream-dark text-left transition-colors font-epilogue rounded-md ${
+                    className={`w-full flex items-center space-x-3 px-3 py-3 hover:bg-cream-dark text-left transition-colors font-dm-sans rounded-md ${
                       activeUser === member.id ? 'bg-neutral-100 text-neutral-900' : 'text-neutral-700'
                     }`}
                   >
@@ -653,11 +652,10 @@ function TimeApp() {
             )}
           </div>
         </div>
-      </div>
+        </div>
 
-
-      {/* Stats Cards Grid - Filtered to current month */}
-      <div className="dashboard-grid">
+        {/* Stats Cards Grid - Filtered to current month */}
+        <div className="dashboard-grid">
         <StatCard
           title="Total Hours"
           value={formatHours(stats.totalHours)}
@@ -678,6 +676,7 @@ function TimeApp() {
           change={`${formatHours(stats.billableHours)} billed`}
           changeType="positive"
         />
+        </div>
       </div>
 
       {/* Data Section Container */}

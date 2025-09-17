@@ -39,8 +39,12 @@ function AppContent() {
     }
   };
 
+  // Check if we're on a project detail page
+  const isProjectDetailPage = location.pathname.match(/^\/projects\/[^/]+$/);
+  const dashboardMainClass = `flex-1 dashboard-main${isProjectDetailPage ? ' project-detail' : ''}`;
+
   return (
-    <div className="dashboard-container flex">
+    <div className="dashboard-container flex h-screen">
       {/* Left Navigation */}
       <LeftNav 
         activeApp={getActiveApp()} 
@@ -48,7 +52,7 @@ function AppContent() {
       />
       
       {/* Main Content Area */}
-      <div className="flex-1 dashboard-main py-12">
+      <div className={dashboardMainClass}>
         <Routes>
           <Route path="/financial/*" element={<FinancialApp />} />
           <Route path="/timesheet/*" element={<TimeApp />} />

@@ -52,3 +52,4 @@ WHERE tablename = 'projects';
 RAISE NOTICE '✅ RLS policies updated for projects table';
 RAISE NOTICE '⚠️  RLS has been DISABLED for development. Enable it later with proper policies for production.';
 
+

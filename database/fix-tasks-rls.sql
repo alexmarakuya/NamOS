@@ -44,3 +44,4 @@ END $$;
 
 SELECT 'RLS disabled for tasks table - task creation should now work' as status;
 
+

@@ -2,11 +2,17 @@ import React, { useState } from 'react';
 import { useClientsWithStatus, useClientOperations } from '../hooks/useSupabase';
 import StatCard from './StatCard';
 
-const ClientsPage: React.FC = () => {
+interface ClientsPageProps {
+  activeStatFilter?: string | null;
+}
+
+const ClientsPage: React.FC<ClientsPageProps> = ({ activeStatFilter }) => {
+  // TODO: Replace with actual user ID from auth context when implemented
+  const currentUserId = 'current-user';
   const { clients, loading, refetch } = useClientsWithStatus();
   const { updateClientStatus } = useClientOperations();
-  const [activeStatFilter, setActiveStatFilter] = useState<string | null>(null);
   const [draggedClient, setDraggedClient] = useState<any>(null);
+
 
   // Generate client avatar (initials or logo)
   const getClientAvatar = (clientName: string) => {
@@ -58,17 +64,41 @@ const ClientsPage: React.FC = () => {
     }
   };
 
+  // Filter clients based on activeStatFilter
+  const filteredClients = React.useMemo(() => {
+    if (!activeStatFilter) return clients;
+    
+    return clients.filter(client => {
+      switch (activeStatFilter) {
+        case 'all':
+          return true;
+        case 'my':
+          // Clients created by or assigned to current user (placeholder logic)
+          // TODO: Update when user assignment fields are added to Client interface
+          return client.name.toLowerCase().includes('my');
+        case 'active':
+          return client.status === 'active';
+        case 'leads':
+          return client.status === 'leads';
+        case 'onboarding':
+          return client.status === 'onboarding';
+        default:
+          return client.status === activeStatFilter;
+      }
+    });
+  }, [clients, activeStatFilter, currentUserId]);
+
   // Group clients by status for Kanban
   const clientColumns = React.useMemo(() => {
     const columns = [
-      { id: 'leads', title: 'Leads', clients: [] as any[] },
-      { id: 'onboarding', title: 'Onboarding', clients: [] as any[] },
-      { id: 'active', title: 'Active', clients: [] as any[] },
-      { id: 'on-hold', title: 'On-Hold', clients: [] as any[] },
-      { id: 'off-boarded', title: 'Off-Boarded', clients: [] as any[] }
+      { id: 'leads', title: 'Leads', clients: [] as any[], color: '#3B82F6' },
+      { id: 'onboarding', title: 'Onboarding', clients: [] as any[], color: '#F59E0B' },
+      { id: 'active', title: 'Active', clients: [] as any[], color: '#10B981' },
+      { id: 'on-hold', title: 'On-Hold', clients: [] as any[], color: '#8B5CF6' },
+      { id: 'off-boarded', title: 'Off-Boarded', clients: [] as any[], color: '#6B7280' }
     ];
 
-    clients.forEach(client => {
+    filteredClients.forEach(client => {
       const column = columns.find(col => col.id === client.status);
       if (column) {
         column.clients.push(client);
@@ -79,89 +109,46 @@ const ClientsPage: React.FC = () => {
     });
 
     return columns;
-  }, [clients]);
+  }, [filteredClients]);
 
   // Show loading state
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-gray-500 font-epilogue">Loading clients...</div>
+        <div className="text-gray-500 font-dm-sans">Loading clients...</div>
       </div>
     );
   }
 
+
   return (
     <>
-      {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 font-epilogue">Clients</h1>
-        <p className="text-gray-600 font-epilogue mt-1">Manage and view all your clients</p>
-      </div>
-
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-          <div 
-            onClick={() => setActiveStatFilter(activeStatFilter === 'all' ? null : 'all')}
-            className="cursor-pointer"
-          >
-            <StatCard
-              title="All Clients"
-              value={clients.length.toString()}
-              change={activeStatFilter === 'all' ? 'Clear' : 'Show'}
-              changeType={activeStatFilter === 'all' ? 'positive' : 'neutral'}
-            />
-          </div>
-          <div 
-            onClick={() => setActiveStatFilter(activeStatFilter === 'active' ? null : 'active')}
-            className="cursor-pointer"
-          >
-            <StatCard
-              title="Active Clients"
-              value={clientColumns.find(col => col.id === 'active')?.clients.length.toString() || '0'}
-              change={activeStatFilter === 'active' ? 'Clear' : 'Show'}
-              changeType={activeStatFilter === 'active' ? 'positive' : 'neutral'}
-            />
-          </div>
-          <div 
-            onClick={() => setActiveStatFilter(activeStatFilter === 'leads' ? null : 'leads')}
-            className="cursor-pointer"
-          >
-            <StatCard
-              title="Leads"
-              value={clientColumns.find(col => col.id === 'leads')?.clients.length.toString() || '0'}
-              change={activeStatFilter === 'leads' ? 'Clear' : 'Show'}
-              changeType={activeStatFilter === 'leads' ? 'positive' : 'neutral'}
-            />
-          </div>
-          <div 
-            onClick={() => setActiveStatFilter(activeStatFilter === 'onboarding' ? null : 'onboarding')}
-            className="cursor-pointer"
-          >
-            <StatCard
-              title="Onboarding"
-              value={clientColumns.find(col => col.id === 'onboarding')?.clients.length.toString() || '0'}
-              change={activeStatFilter === 'onboarding' ? 'Clear' : 'Show'}
-              changeType={activeStatFilter === 'onboarding' ? 'positive' : 'neutral'}
-            />
-          </div>
-        </div>
-
       {/* Client Kanban Board */}
-      <div className="p-6 rounded-[28px]" style={{ backgroundColor: 'rgb(252, 252, 250)' }}>
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-6 min-h-[500px]">
+      <div className="dashboard-card">
+        <div className="flex gap-3 overflow-x-auto scrollbar-hide min-h-[500px]">
           {clientColumns.map((column) => (
-            <div key={column.id} className="flex flex-col">
+            <div key={column.id} className="flex flex-col rounded-2xl p-4 min-w-[280px] w-[280px] flex-shrink-0 min-h-[800px]" style={{ 
+              background: 'linear-gradient(to bottom, #F8F8F8 0%, #FFFFFF 100%)'
+            }}>
+              {/* Column Header */}
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-semibold text-gray-900 font-epilogue">
-                  {column.title}
-                </h3>
-                <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full font-epilogue">
-                  {column.clients.length}
-                </span>
+                <div className="flex items-center space-x-2">
+                  <div 
+                    className="w-3 h-3 rounded-full"
+                    style={{ backgroundColor: column.color }}
+                  />
+                  <h3 className="font-medium text-gray-900 font-dm-sans">
+                    {column.title}
+                  </h3>
+                  <span className="text-gray-500 text-xs">
+                    {column.clients.length}
+                  </span>
+                </div>
               </div>
+              
+              {/* Clients */}
               <div 
-                className="flex-1 rounded-xl p-4 space-y-3 min-h-[400px]"
-                style={{ backgroundColor: 'rgb(248, 247, 244)' }}
+                className="space-y-3 flex-1 overflow-y-auto"
                 onDragOver={handleDragOver}
                 onDrop={(e) => handleDrop(e, column.id)}
               >
@@ -175,21 +162,21 @@ const ClientsPage: React.FC = () => {
                     <div className="space-y-3">
                       {/* Client Avatar and Name */}
                       <div className="flex items-center space-x-3">
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold font-epilogue ${getAvatarColor(client.name)}`}>
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold font-dm-sans ${getAvatarColor(client.name)}`}>
                           {getClientAvatar(client.name)}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <h4 className="font-medium text-gray-900 font-epilogue text-sm truncate">
+                          <h4 className="font-medium text-gray-900 font-dm-sans text-sm truncate">
                             {client.name}
                           </h4>
-                          <p className="text-xs text-gray-500 font-epilogue">
+                          <p className="text-xs text-gray-500 font-dm-sans">
                             {client.projectCount} project{client.projectCount !== 1 ? 's' : ''}
                           </p>
                         </div>
                       </div>
                       
                       {/* Project Stats */}
-                      <div className="flex items-center justify-between text-xs text-gray-500 font-epilogue">
+                      <div className="flex items-center justify-between text-xs text-gray-500 font-dm-sans">
                         <span className="flex items-center">
                           <div className="w-1.5 h-1.5 bg-green-500 rounded-full mr-1"></div>
                           {client.activeProjects} active
@@ -204,7 +191,7 @@ const ClientsPage: React.FC = () => {
                 ))}
                 {column.clients.length === 0 && (
                   <div className="flex items-center justify-center h-32 text-gray-400">
-                    <p className="text-sm font-epilogue">No clients</p>
+                    <p className="text-sm font-dm-sans">No clients</p>
                   </div>
                 )}
               </div>

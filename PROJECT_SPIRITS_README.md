@@ -42,6 +42,7 @@ Run the setup script to create the necessary database tables:
 
 ```bash
 
+yy
 
 ```
 

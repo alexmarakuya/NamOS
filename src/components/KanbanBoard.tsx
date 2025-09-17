@@ -9,6 +9,7 @@ interface KanbanBoardProps {
   onTaskClick: (taskId: string) => void;
   onTimeLog?: (taskId: string) => void;
   onAddTask?: (status: Task['status']) => void;
+  isProjectDetail?: boolean;
 }
 
 const COLUMNS: Omit<TaskColumn, 'tasks'>[] = [
@@ -19,7 +20,7 @@ const COLUMNS: Omit<TaskColumn, 'tasks'>[] = [
   { id: 'done', title: 'Done', status: 'done', color: '#10B981' }
 ];
 
-function KanbanBoard({ tasks, projects, teamMembers, onTaskUpdate, onTaskClick, onTimeLog, onAddTask }: KanbanBoardProps) {
+function KanbanBoard({ tasks, projects, teamMembers, onTaskUpdate, onTaskClick, onTimeLog, onAddTask, isProjectDetail = false }: KanbanBoardProps) {
   const [draggedTask, setDraggedTask] = useState<Task | null>(null);
   const [draggedOverColumn, setDraggedOverColumn] = useState<string | null>(null);
   const [dropIndicator, setDropIndicator] = useState<{
@@ -158,15 +159,19 @@ function KanbanBoard({ tasks, projects, teamMembers, onTaskUpdate, onTaskClick, 
 
   return (
     <div>
-      {/* Desktop: Grid layout that fills full width */}
-      <div className="hidden lg:grid lg:grid-cols-5 lg:gap-6 h-full p-5">
+      {/* Desktop: Flex layout with min-width columns and overflow */}
+      <div className="hidden lg:flex lg:gap-3 h-full overflow-x-auto scrollbar-hide">
         {columns.map(column => {
           const getColumnBackground = (columnId: string) => {
             return ''; // Use inline style instead
           };
 
           return (
-            <div key={column.id} className={`h-full flex flex-col kanban-column ${getColumnBackground(column.id)} rounded-2xl p-3`} style={{ backgroundColor: 'rgb(248, 247, 244)' }}>
+            <div key={column.id} className="flex flex-col rounded-2xl p-4 min-w-[280px] w-[280px] flex-shrink-0 min-h-[800px]" style={{ 
+              background: isProjectDetail 
+                ? 'linear-gradient(to bottom, #FFFFFF 0%, #F8F8F8 100%)'
+                : 'linear-gradient(to bottom, #F8F8F8 0%, #FFFFFF 100%)'
+            }}>
           {/* Column Header */}
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center space-x-2">
@@ -174,7 +179,7 @@ function KanbanBoard({ tasks, projects, teamMembers, onTaskUpdate, onTaskClick, 
                 className="w-3 h-3 rounded-full"
                 style={{ backgroundColor: column.color }}
               />
-              <h3 className="font-medium text-white font-epilogue">{column.title}</h3>
+              <h3 className="font-medium text-white font-dm-sans">{column.title}</h3>
               <span className="text-neutral-400 text-xs">
                 {column.tasks.length}
               </span>
@@ -182,7 +187,7 @@ function KanbanBoard({ tasks, projects, teamMembers, onTaskUpdate, onTaskClick, 
             {onAddTask && (
               <button
                 onClick={() => onAddTask(column.status)}
-                className="w-6 h-6 rounded-full bg-white/10 hover:bg-white/20 transition-colors flex items-center justify-center group"
+                className="btn-icon-sm rounded-full bg-white/10 hover:bg-white/20 transition-colors flex items-center justify-center group"
                 title={`Add task to ${column.title}`}
               >
                 <svg className="w-3 h-3 text-white group-hover:text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -194,8 +199,8 @@ function KanbanBoard({ tasks, projects, teamMembers, onTaskUpdate, onTaskClick, 
 
           {/* Tasks */}
           <div 
-            className={`task-list space-y-3 flex-1 rounded-xl transition-all duration-200 relative ${
-              draggedOverColumn === column.id ? 'bg-neutral-50 border-2 border-neutral-800 border-dashed shadow-inner' : ''
+            className={`space-y-3 flex-1 overflow-y-auto ${
+              draggedOverColumn === column.id ? 'bg-neutral-50 border-2 border-neutral-800 border-dashed shadow-inner rounded-xl' : ''
             }`}
             onDragOver={(e) => handleDragOver(e, column.id, column.tasks)}
             onDragEnter={(e) => handleDragEnter(e, column.id)}
@@ -230,7 +235,7 @@ function KanbanBoard({ tasks, projects, teamMembers, onTaskUpdate, onTaskClick, 
                 >
                 {/* Task Header */}
                 <div className="flex items-start justify-between mb-2">
-                  <h4 className="font-medium text-gray-900 text-base leading-tight font-epilogue flex-1">
+                  <h4 className="font-medium text-gray-900 text-base leading-tight font-dm-sans flex-1">
                     {task.title}
                   </h4>
                   <div className="flex items-center space-x-1 ml-2">
@@ -346,7 +351,11 @@ function KanbanBoard({ tasks, projects, teamMembers, onTaskUpdate, onTaskClick, 
           };
 
           return (
-            <div key={column.id} className={`min-w-80 w-80 h-full flex flex-col flex-shrink-0 kanban-column ${getColumnBackground(column.id)} rounded-2xl p-3`} style={{ backgroundColor: 'rgb(248, 247, 244)' }}>
+            <div key={column.id} className={`min-w-[280px] w-[280px] h-full flex flex-col flex-shrink-0 kanban-column ${getColumnBackground(column.id)} rounded-2xl p-3 min-h-[800px]`} style={{ 
+              background: isProjectDetail 
+                ? 'linear-gradient(to bottom, #FFFFFF 0%, #F8F8F8 100%)'
+                : 'linear-gradient(to bottom, #F8F8F8 0%, #FFFFFF 100%)'
+            }}>
             {/* Column Header */}
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center space-x-2">
@@ -354,7 +363,7 @@ function KanbanBoard({ tasks, projects, teamMembers, onTaskUpdate, onTaskClick, 
                   className="w-3 h-3 rounded-full"
                   style={{ backgroundColor: column.color }}
                 />
-                <h3 className="font-medium text-white font-epilogue">{column.title}</h3>
+                <h3 className="font-medium text-white font-dm-sans">{column.title}</h3>
                 <span className="text-neutral-400 text-xs">
                   {column.tasks.length}
                 </span>
@@ -395,7 +404,7 @@ function KanbanBoard({ tasks, projects, teamMembers, onTaskUpdate, onTaskClick, 
                     className="task-card bg-white rounded-lg p-3 shadow-sm border border-gray-200 hover:shadow-md transition-shadow cursor-move"
                   >
                     <div className="flex items-start justify-between mb-2">
-                      <h4 className="text-sm font-medium text-gray-900 font-epilogue line-clamp-2">
+                      <h4 className="text-sm font-medium text-gray-900 font-dm-sans line-clamp-2">
                         {task.title}
                       </h4>
                       <div className="flex items-center space-x-1 ml-2 flex-shrink-0">
@@ -408,7 +417,7 @@ function KanbanBoard({ tasks, projects, teamMembers, onTaskUpdate, onTaskClick, 
                     </div>
                     
                     {task.description && (
-                      <p className="text-xs text-gray-600 mb-2 line-clamp-2 font-epilogue">
+                      <p className="text-xs text-gray-600 mb-2 line-clamp-2 font-dm-sans">
                         {task.description}
                       </p>
                     )}
@@ -416,7 +425,7 @@ function KanbanBoard({ tasks, projects, teamMembers, onTaskUpdate, onTaskClick, 
                     <div className="flex items-center justify-between text-xs text-gray-500">
                       <div className="flex items-center space-x-2">
                         {task.project_id && (
-                          <span className="font-epilogue">
+                          <span className="font-dm-sans">
                             {getProjectName(task.project_id)}
                           </span>
                         )}
@@ -433,7 +442,7 @@ function KanbanBoard({ tasks, projects, teamMembers, onTaskUpdate, onTaskClick, 
                       
                       <div className="flex items-center space-x-2">
                         {task.due_date && (
-                          <span className={`font-epilogue ${
+                          <span className={`font-dm-sans ${
                             new Date(task.due_date) < new Date() ? 'text-red-500' : ''
                           }`}>
                             {new Date(task.due_date).toLocaleDateString()}
@@ -477,7 +486,7 @@ function KanbanBoard({ tasks, projects, teamMembers, onTaskUpdate, onTaskClick, 
               
               {/* Empty state */}
               {column.tasks.length === 0 && (
-                <div className="flex-1 flex items-center justify-center text-gray-400 text-sm font-epilogue">
+                <div className="flex-1 flex items-center justify-center text-gray-400 text-sm font-dm-sans">
                   <p className="text-center">
                     {draggedOverColumn === column.id 
                       ? 'Drop here' 

@@ -63,6 +63,7 @@ export interface Project {
   business_unit_id?: string;
   is_active: boolean;
   status?: 'active' | 'upcoming' | 'completed' | 'on_hold';
+  project_type?: 'ongoing' | 'fixed-timeline'; // New field for project type
   deadline?: string; // ISO date string
   created_at?: string;
   updated_at?: string;
@@ -78,6 +79,23 @@ export interface TeamMember {
   role: string;
   hourly_rate?: number;
   is_active: boolean;
+}
+
+export interface Client {
+  id: string;
+  name: string;
+  status: 'leads' | 'onboarding' | 'active' | 'on-hold' | 'off-boarded';
+  logo_url?: string;
+  contact_email?: string;
+  contact_phone?: string;
+  address?: string;
+  notes?: string;
+  created_at?: string;
+  updated_at?: string;
+  // Computed fields from projects
+  projectCount?: number;
+  activeProjects?: number;
+  completedProjects?: number;
 }
 
 export interface TimesheetStats {
@@ -102,7 +120,9 @@ export interface Task {
   title: string;
   description?: string;
   project_id?: string;
-  assigned_to?: string;
+  assigned_to?: string; // Main assignee (backward compatibility)
+  assignees?: string[]; // Multiple assignees (main + followers)
+  followers?: string[]; // Followers (separate from main assignee)
   status: 'backlog' | 'todo' | 'in_progress' | 'review' | 'done';
   priority: 'low' | 'medium' | 'high' | 'urgent';
   due_date?: Date;
@@ -113,7 +133,9 @@ export interface Task {
   updated_at: Date;
   created_by: string;
   project?: Project;
-  assignee?: TeamMember;
+  assignee?: TeamMember; // Main assignee object
+  assigneeList?: TeamMember[]; // All assignees objects
+  followerList?: TeamMember[]; // All followers objects
 }
 
 export interface TaskColumn {

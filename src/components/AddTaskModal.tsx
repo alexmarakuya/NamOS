@@ -130,7 +130,7 @@ function AddTaskModal({ projects, teamMembers, onClose, onSubmit, defaultProject
       <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 className="text-xl font-semibold text-gray-900 font-epilogue">Add New Task</h2>
+          <h2 className="text-xl font-semibold text-gray-900 font-dm-sans">Add New Task</h2>
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 transition-colors"
@@ -154,7 +154,7 @@ function AddTaskModal({ projects, teamMembers, onClose, onSubmit, defaultProject
               required
               value={formData.title}
               onChange={(e) => handleChange('title', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent font-epilogue"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent font-dm-sans"
               placeholder="Enter task title..."
             />
           </div>
@@ -169,7 +169,7 @@ function AddTaskModal({ projects, teamMembers, onClose, onSubmit, defaultProject
               rows={3}
               value={formData.description}
               onChange={(e) => handleChange('description', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent font-epilogue"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent font-dm-sans"
               placeholder="Enter task description..."
             />
           </div>
@@ -185,7 +185,7 @@ function AddTaskModal({ projects, teamMembers, onClose, onSubmit, defaultProject
                 <button
                   type="button"
                   onClick={() => setProjectDropdownOpen(!projectDropdownOpen)}
-                  className="w-full px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 font-epilogue border border-neutral-200 bg-white text-neutral-800 hover:border-neutral-300 hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent text-left flex items-center justify-between"
+                  className="w-full px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 font-dm-sans border border-neutral-200 bg-white text-neutral-800 hover:border-neutral-300 hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent text-left flex items-center justify-between"
                 >
                   <span className={formData.project_id ? 'text-neutral-900' : 'text-neutral-500'}>
                     {formData.project_id ? getProjectDisplayName(formData.project_id) : 'Select project...'}
@@ -203,7 +203,7 @@ function AddTaskModal({ projects, teamMembers, onClose, onSubmit, defaultProject
                         handleChange('project_id', '');
                         setProjectDropdownOpen(false);
                       }}
-                      className="w-full px-3 py-2 text-left text-sm text-neutral-500 hover:bg-neutral-50 font-epilogue"
+                      className="w-full px-3 py-2 text-left text-sm text-neutral-500 hover:bg-neutral-50 font-dm-sans"
                     >
                       Select project...
                     </button>
@@ -215,7 +215,7 @@ function AddTaskModal({ projects, teamMembers, onClose, onSubmit, defaultProject
                           handleChange('project_id', project.id);
                           setProjectDropdownOpen(false);
                         }}
-                        className="w-full px-3 py-2 text-left text-sm text-neutral-900 hover:bg-neutral-50 font-epilogue"
+                        className="w-full px-3 py-2 text-left text-sm text-neutral-900 hover:bg-neutral-50 font-dm-sans"
                       >
                         {project.client_name ? `${project.client_name}: ${project.name}` : project.name}
                       </button>
@@ -234,7 +234,7 @@ function AddTaskModal({ projects, teamMembers, onClose, onSubmit, defaultProject
                 <button
                   type="button"
                   onClick={() => setAssigneeDropdownOpen(!assigneeDropdownOpen)}
-                  className="w-full px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 font-epilogue border border-neutral-200 bg-white text-neutral-800 hover:border-neutral-300 hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent text-left flex items-center justify-between"
+                  className="w-full px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 font-dm-sans border border-neutral-200 bg-white text-neutral-800 hover:border-neutral-300 hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent text-left flex items-center justify-between"
                 >
                   <span className={assignedMembers.length > 0 ? 'text-neutral-900' : 'text-neutral-500'}>
                     {assignedMembers.length > 0 
@@ -254,7 +254,7 @@ function AddTaskModal({ projects, teamMembers, onClose, onSubmit, defaultProject
                         key={member.id}
                         type="button"
                         onClick={() => toggleAssignee(member.id)}
-                        className="w-full px-3 py-2 text-left text-sm text-neutral-900 hover:bg-neutral-50 font-epilogue flex items-center justify-between"
+                        className="w-full px-3 py-2 text-left text-sm text-neutral-900 hover:bg-neutral-50 font-dm-sans flex items-center justify-between"
                       >
                         <span>{member.full_name || member.slack_username}</span>
                         {assignedMembers.includes(member.id) && (
@@ -276,7 +276,7 @@ function AddTaskModal({ projects, teamMembers, onClose, onSubmit, defaultProject
                     return member ? (
                       <span
                         key={memberId}
-                        className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-accent-100 text-accent-800 font-epilogue"
+                        className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-accent-100 text-accent-800 font-dm-sans"
                       >
                         {member.full_name || member.slack_username}
                         <button
@@ -307,7 +307,7 @@ function AddTaskModal({ projects, teamMembers, onClose, onSubmit, defaultProject
                 <button
                   type="button"
                   onClick={() => setStatusDropdownOpen(!statusDropdownOpen)}
-                  className="w-full px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 font-epilogue border border-neutral-200 bg-white text-neutral-800 hover:border-neutral-300 hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent text-left flex items-center justify-between"
+                  className="w-full px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 font-dm-sans border border-neutral-200 bg-white text-neutral-800 hover:border-neutral-300 hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent text-left flex items-center justify-between"
                 >
                   <span className="text-neutral-900">
                     {getStatusDisplayName(formData.status)}
@@ -327,7 +327,7 @@ function AddTaskModal({ projects, teamMembers, onClose, onSubmit, defaultProject
                           handleChange('status', status);
                           setStatusDropdownOpen(false);
                         }}
-                        className="w-full px-3 py-2 text-left text-sm text-neutral-900 hover:bg-neutral-50 font-epilogue"
+                        className="w-full px-3 py-2 text-left text-sm text-neutral-900 hover:bg-neutral-50 font-dm-sans"
                       >
                         {getStatusDisplayName(status)}
                       </button>
@@ -346,7 +346,7 @@ function AddTaskModal({ projects, teamMembers, onClose, onSubmit, defaultProject
                 <button
                   type="button"
                   onClick={() => setPriorityDropdownOpen(!priorityDropdownOpen)}
-                  className="w-full px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 font-epilogue border border-neutral-200 bg-white text-neutral-800 hover:border-neutral-300 hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent text-left flex items-center justify-between"
+                  className="w-full px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 font-dm-sans border border-neutral-200 bg-white text-neutral-800 hover:border-neutral-300 hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent text-left flex items-center justify-between"
                 >
                   <span className="text-neutral-900">
                     {getPriorityDisplayName(formData.priority)}
@@ -366,7 +366,7 @@ function AddTaskModal({ projects, teamMembers, onClose, onSubmit, defaultProject
                           handleChange('priority', priority);
                           setPriorityDropdownOpen(false);
                         }}
-                        className="w-full px-3 py-2 text-left text-sm text-neutral-900 hover:bg-neutral-50 font-epilogue"
+                        className="w-full px-3 py-2 text-left text-sm text-neutral-900 hover:bg-neutral-50 font-dm-sans"
                       >
                         {getPriorityDisplayName(priority)}
                       </button>
@@ -389,7 +389,7 @@ function AddTaskModal({ projects, teamMembers, onClose, onSubmit, defaultProject
                 id="due_date"
                 value={formData.due_date}
                 onChange={(e) => handleChange('due_date', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent font-epilogue"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent font-dm-sans"
               />
             </div>
 
@@ -405,7 +405,7 @@ function AddTaskModal({ projects, teamMembers, onClose, onSubmit, defaultProject
                 step="0.5"
                 value={formData.estimated_hours}
                 onChange={(e) => handleChange('estimated_hours', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent font-epilogue"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent font-dm-sans"
                 placeholder="0.0"
               />
             </div>
@@ -417,13 +417,13 @@ function AddTaskModal({ projects, teamMembers, onClose, onSubmit, defaultProject
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-neutral-500 hover:text-neutral-600 bg-transparent border border-neutral-200 hover:border-neutral-300 rounded-lg hover:bg-cream-dark transition-colors font-epilogue"
+              className="btn-sm text-sm font-medium text-neutral-500 hover:text-neutral-600 bg-transparent border border-neutral-200 hover:border-neutral-300 rounded-lg hover:bg-cream-dark transition-colors font-dm-sans"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-4 py-2 text-sm font-medium text-white bg-accent-500 rounded-lg hover:bg-accent-600 transition-colors font-epilogue"
+              className="btn-sm text-sm font-medium text-white bg-accent-500 rounded-lg hover:bg-accent-600 transition-colors font-dm-sans"
             >
               Create Task
             </button>

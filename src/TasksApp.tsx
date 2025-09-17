@@ -2,8 +2,7 @@ import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react'
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { Task, TaskStats, Project, TeamMember, TimeEntry } from './types';
-import { useProjects, useTeamMembers, useTasks, useTaskOperations, useProjectStats, useUrgentTasks, useTimeSensitiveProjects, useBusinessUnits, useProjectOperations } from './hooks/useSupabase';
-import StatCard from './components/StatCard';
+import { useProjects, useTeamMembers, useTasks, useTaskOperations, useProjectStats, useUrgentTasks, useTimeSensitiveProjects, useBusinessUnits, useProjectOperations, useClientsWithStatus, useClientOperations } from './hooks/useSupabase';
 import KanbanBoard from './components/KanbanBoard';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import TaskList from './components/TaskList';
@@ -22,6 +21,9 @@ function TasksApp() {
   const navigate = useNavigate();
   const location = useLocation();
   const { projectId } = useParams();
+  
+  // TODO: Replace with actual user ID from auth context when implemented
+  const currentUserId = 'current-user';
   
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [viewMode, setViewMode] = useState<'kanban'>('kanban');
@@ -57,15 +59,19 @@ function TasksApp() {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [isTimeLogModalOpen, setIsTimeLogModalOpen] = useState(false);
   const [teamDropdownOpen, setTeamDropdownOpen] = useState(false);
-  const [activeStatFilter, setActiveStatFilter] = useState<string | null>(null);
+  const [activeStatFilter, setActiveStatFilter] = useState<string | null>('all');
+  const [projectGroupBy, setProjectGroupBy] = useState<'client' | 'status'>('client');
+  const [activeProjectTab, setActiveProjectTab] = useState<'tasks' | 'files' | 'timesheet' | 'reports' | 'ai-chat'>('tasks');
   
   const teamDropdownRef = useRef<HTMLDivElement>(null);
   
   // Get projects and team members
   const { projects = [], loading: projectsLoading, refetch: refetchProjects } = useProjects();
   const { teamMembers = [], loading: teamMembersLoading } = useTeamMembers();
+  const { clients = [], loading: clientsLoading, refetch: refetchClients } = useClientsWithStatus();
   const { businessUnits } = useBusinessUnits();
   const { createProject, updateProject, deleteProject } = useProjectOperations();
+  const { createClient } = useClientOperations();
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -89,7 +95,7 @@ function TasksApp() {
   const { urgentTasks, loading: urgentTasksLoading } = useUrgentTasks();
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { timeSensitiveProjects, loading: timeSensitiveLoading } = useTimeSensitiveProjects();
-  const { createTask, updateTask } = useTaskOperations();
+  const { createTask, updateTask, deleteTask } = useTaskOperations();
 
   // Filter tasks based on current view and filters
   const filteredTasks = useMemo(() => {
@@ -101,9 +107,35 @@ function TasksApp() {
         return projectMatch && assigneeMatch;
       }
       
-      return false; // Projects overview doesn't show tasks
+      // For tasks overview, show all tasks with optional assignee filter
+      if (currentView === 'tasks-overview') {
+        // Apply stat filter if active
+        let matchesStatFilter = true;
+        if (activeStatFilter && activeStatFilter !== 'all') {
+          switch (activeStatFilter) {
+            case 'my':
+              // Tasks assigned to or created by current user (placeholder logic)
+              matchesStatFilter = task.assigned_to === 'current-user' || task.created_by === 'current-user';
+              break;
+            case 'overdue':
+              matchesStatFilter = task.due_date && new Date(task.due_date) < new Date();
+              break;
+            case 'completed':
+              matchesStatFilter = task.status === 'done';
+              break;
+            default:
+              matchesStatFilter = true;
+          }
+        }
+        
+        const assigneeMatch = selectedAssignee === 'all' || task.assigned_to === selectedAssignee;
+        return matchesStatFilter && assigneeMatch;
+      }
+      
+      // Other views don't show tasks
+      return false;
     });
-  }, [tasks, currentView, effectiveSelectedProject, selectedAssignee]);
+  }, [tasks, currentView, effectiveSelectedProject, selectedAssignee, activeStatFilter]);
 
 
   const handleTaskUpdate = useCallback(async (taskId: string, updates: Partial<Task>) => {
@@ -298,6 +330,41 @@ function TasksApp() {
     }
   }, [deleteProject, navigate]);
 
+  const handleTaskDelete = useCallback(async (taskId: string) => {
+    try {
+      await deleteTask(taskId);
+      // Close task detail modal if it's open
+      setIsTaskDetailModalOpen(false);
+      setSelectedTask(null);
+      setSelectedTaskId(null);
+      // Refresh tasks to remove the deleted task
+      await refetchTasks();
+    } catch (error) {
+      console.error('Failed to delete task:', error);
+      alert('Failed to delete task. Please try again.');
+    }
+  }, [deleteTask, refetchTasks]);
+
+  const handleInstantClientCreate = useCallback(async () => {
+    try {
+      const defaultClientData = {
+        name: 'New Client',
+        status: 'leads' as const
+      };
+      
+      const newClient = await createClient(defaultClientData);
+      
+      if (newClient) {
+        // Refresh clients to show the new client
+        await refetchClients();
+        alert('Client created successfully! You can edit the details in the clients view.');
+      }
+    } catch (error) {
+      console.error('Failed to create client:', error);
+      alert('Failed to create client. Please try again.');
+    }
+  }, [createClient, refetchClients]);
+
   const handleTaskClick = useCallback((taskId: string) => {
     const task = tasks.find(t => t.id === taskId);
     if (task) {
@@ -311,7 +378,7 @@ function TasksApp() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent-500 mx-auto mb-4"></div>
-          <p className="text-neutral-300 font-epilogue">Loading tasks...</p>
+          <p className="text-neutral-300 font-dm-sans">Loading tasks...</p>
         </div>
       </div>
     );
@@ -321,7 +388,7 @@ function TasksApp() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <p className="text-red-400 font-epilogue mb-4">Error loading tasks</p>
+          <p className="text-red-400 font-dm-sans mb-4">Error loading tasks</p>
           <p className="text-neutral-400 text-sm mb-4">{tasksError}</p>
           <button
             onClick={refetchTasks}
@@ -335,15 +402,17 @@ function TasksApp() {
   }
 
   return (
-    <div className="h-full">
-      <div className="flex h-full gap-0 rounded-[28px] overflow-hidden" style={{ backgroundColor: (currentView === 'projects-overview' || currentView === 'clients-overview' || currentView === 'tasks-overview') ? 'transparent' : '#f8f7f4' }}>
-      {/* Project Sidebar - Always show on individual project pages */}
+    <div className="h-full w-full">
+      <div className="flex h-full w-full gap-0 rounded-[28px] overflow-hidden" style={{ backgroundColor: (currentView === 'projects-overview' || currentView === 'clients-overview' || currentView === 'tasks-overview') ? 'transparent' : '#F8F8F8' }}>
+      
+      {/* Project Sidebar - Side by side at top level */}
       {currentView === 'project-detail' && effectiveSelectedProject && (
+        <div className="flex-shrink-0 m-4" style={{ height: 'calc(100% - 32px)' }}>
         <ProjectSidebar
           project={projects.find(p => p.id === effectiveSelectedProject)!}
           teamMembers={teamMembers}
-          isOpen={true} // Always open now
-          onToggle={() => {}} // No longer needed
+            isOpen={true}
+            onToggle={() => {}}
           onBack={() => navigate('/projects')}
           onEdit={() => {
             const currentProject = projects.find(p => p.id === effectiveSelectedProject);
@@ -355,74 +424,229 @@ function TasksApp() {
           onUpdateProject={handleInlineProjectUpdate}
           onDelete={handleProjectDelete}
         />
+        </div>
       )}
       
       {/* Main Content */}
-      <div className="flex-1 flex flex-col space-y-4 min-w-0 px-6 py-3" style={{ backgroundColor: (currentView === 'projects-overview' || currentView === 'clients-overview' || currentView === 'tasks-overview') ? 'transparent' : 'rgb(252, 252, 250)', boxShadow: (currentView === 'projects-overview' || currentView === 'clients-overview' || currentView === 'tasks-overview') ? 'none' : '-4px 0 8px rgba(0, 0, 0, 0.02)' }}>
-      {/* Header and Stats Container */}
-      <div className="p-5">
-        {/* Header */}
-        <div className="flex justify-between items-center mb-6">
-        <div>
-          {currentView === 'projects-overview' ? (
-            <>
-              <h1 className="text-2xl font-semibold text-white mb-1 font-epilogue">
-                Projects
-              </h1>
-              <p className="text-sm text-neutral-600 font-epilogue">
-                Overview of all active projects
-              </p>
-            </>
-          ) : currentView === 'tasks-overview' ? (
-            <>
-              <h1 className="text-2xl font-semibold text-white mb-1 font-epilogue">
+      <div className="flex-1 flex flex-col min-w-0 max-w-full overflow-hidden p-6" style={{ backgroundColor: 'transparent' }}>
+        {/* Conditional Layout: Project Detail vs Other Views */}
+        {currentView === 'project-detail' && effectiveSelectedProject ? (
+          <>
+            {/* Project Detail Content */}
+            <div className="flex flex-col h-full">
+                {/* Header with Tab Navigation and Actions */}
+                <div className="flex justify-between items-center mb-6">
+                  {/* Tab Navigation */}
+                  <nav className="flex space-x-6">
+                    <button
+                      onClick={() => setActiveProjectTab('tasks')}
+                      className={`py-2 px-1 font-medium text-base transition-colors font-dm-sans ${
+                        activeProjectTab === 'tasks'
+                          ? 'text-orange-600'
+                          : 'text-gray-500 hover:text-gray-700'
+                      }`}
+                    >
                 Tasks
-              </h1>
-              <p className="text-sm text-neutral-600 font-epilogue">
-                All tasks across projects
-              </p>
-            </>
-          ) : currentView === 'clients-overview' ? (
-            <>
-              <h1 className="text-2xl font-semibold text-white mb-1 font-epilogue">
-                Clients
-              </h1>
-              <p className="text-sm text-neutral-600 font-epilogue">
-                Manage and view all your clients
-              </p>
-            </>
-          ) : currentView === 'project-detail' && effectiveSelectedProject ? (
-            <>
-              <h1 className="text-2xl font-semibold text-white mb-1 font-epilogue">
-                Tasks
-              </h1>
+                    </button>
+                    <button
+                      onClick={() => setActiveProjectTab('files')}
+                      className={`py-2 px-1 font-medium text-base transition-colors font-dm-sans ${
+                        activeProjectTab === 'files'
+                          ? 'text-orange-600'
+                          : 'text-gray-500 hover:text-gray-700'
+                      }`}
+                    >
+                      Files
+                    </button>
+                    <button
+                      onClick={() => setActiveProjectTab('timesheet')}
+                      className={`py-2 px-1 font-medium text-base transition-colors font-dm-sans ${
+                        activeProjectTab === 'timesheet'
+                          ? 'text-orange-600'
+                          : 'text-gray-500 hover:text-gray-700'
+                      }`}
+                    >
+                      Timesheet
+                    </button>
+                    <button
+                      onClick={() => setActiveProjectTab('reports')}
+                      className={`py-2 px-1 font-medium text-base transition-colors font-dm-sans ${
+                        activeProjectTab === 'reports'
+                          ? 'text-orange-600'
+                          : 'text-gray-500 hover:text-gray-700'
+                      }`}
+                    >
+                      Reports
+                    </button>
+                    <button
+                      onClick={() => setActiveProjectTab('ai-chat')}
+                      className={`py-2 px-1 font-medium text-base transition-colors font-dm-sans ${
+                        activeProjectTab === 'ai-chat'
+                          ? 'text-orange-600'
+                          : 'text-gray-500 hover:text-gray-700'
+                      }`}
+                    >
+                      AI Chat
+                    </button>
+                  </nav>
+
+                  {/* Actions */}
+                  <div className="flex items-center space-x-4">
+                    {/* Team Member Filter Dropdown */}
+                    <div className="relative" ref={teamDropdownRef}>
+                      <button
+                        onClick={() => setTeamDropdownOpen(!teamDropdownOpen)}
+                        className="px-3 py-2 text-sm font-medium transition-all duration-200 font-dm-sans flex items-center gap-2 text-slate-700 hover:bg-gray-100 rounded-lg border border-gray-200"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+                        </svg>
+                        {selectedAssignee === 'all' ? 'All Members' : teamMembers.find(m => m.id === selectedAssignee)?.full_name || 'Select Member'}
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </button>
+
+                      {teamDropdownOpen && (
+                        <div className="absolute right-0 mt-2 w-56 bg-white border border-gray-200 rounded-lg shadow-lg z-10 py-2 pl-2 max-h-64 overflow-y-auto dropdown-scrollbar">
+                          <button
+                            onClick={() => {
+                              setSelectedAssignee('all');
+                              setTeamDropdownOpen(false);
+                            }}
+                            className={`w-full text-left px-3 py-2 text-sm rounded-md transition-colors font-dm-sans ${
+                              selectedAssignee === 'all' ? 'bg-accent-50 text-accent-700' : 'text-gray-700 hover:bg-gray-50'
+                            }`}
+                          >
+                            All Members
+                          </button>
+                          {teamMembers.map(member => (
+                            <button
+                              key={member.id}
+                              onClick={() => {
+                                setSelectedAssignee(member.id);
+                                setTeamDropdownOpen(false);
+                              }}
+                              className={`w-full text-left px-3 py-2 text-sm rounded-md transition-colors font-dm-sans ${
+                                selectedAssignee === member.id ? 'bg-accent-50 text-accent-700' : 'text-gray-700 hover:bg-gray-50'
+                              }`}
+                            >
+                              {member.full_name || member.slack_username}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Add Task Button */}
+                    <button
+                      onClick={() => handleInstantTaskCreate()}
+                      className="px-3 py-2 text-sm font-medium transition-all duration-200 font-dm-sans flex items-center gap-2 text-slate-700 hover:bg-gray-100 rounded-lg"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                      </svg>
+                      Add Task
+                    </button>
+                  </div>
+                </div>
+
+                {/* Tab Content */}
+                <div className="flex-1">
+                  {activeProjectTab === 'tasks' ? (
+                    <KanbanBoard 
+                      tasks={filteredTasks}
+                      projects={projects}
+                      teamMembers={teamMembers}
+                      onTaskUpdate={handleTaskUpdate}
+                      onTaskClick={handleTaskClick}
+                      onAddTask={handleAddTaskToColumn}
+                      isProjectDetail={true}
+                    />
+                  ) : (
+                    <div className="flex flex-col items-center justify-center h-full text-gray-400">
+                      <div className="text-center">
+                        <svg className="w-16 h-16 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          {activeProjectTab === 'files' && (
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          )}
+                          {activeProjectTab === 'timesheet' && (
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          )}
+                          {activeProjectTab === 'reports' && (
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                          )}
+                          {activeProjectTab === 'ai-chat' && (
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                          )}
+                        </svg>
+                        <h3 className="text-lg font-medium text-gray-900 mb-2 font-dm-sans">
+                          {activeProjectTab === 'files' && 'Files'}
+                          {activeProjectTab === 'timesheet' && 'Timesheet'}
+                          {activeProjectTab === 'reports' && 'Reports'}
+                          {activeProjectTab === 'ai-chat' && 'AI Chat'}
+                        </h3>
+                        <p className="text-gray-500 font-dm-sans">This feature is coming soon!</p>
+                        <p className="text-sm text-gray-400 mt-2 font-dm-sans">
+                          We're working hard to bring you this functionality.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+            </div>
             </>
           ) : (
             <>
-              <h1 className="text-2xl font-semibold text-white mb-1 font-epilogue">
-                Projects & Tasks
-              </h1>
-              <p className="text-sm text-neutral-600 font-epilogue">
-                Manage your project tasks and track progress
-              </p>
+            {/* Standard Layout for Other Views */}
+      {/* Full Width Header */}
+      <div className="flex justify-between items-center mb-6">
+        {/* Page Title with Filter Display */}
+        <div>
+          <h1 className="text-2xl font-semibold text-slate-800 font-dm-sans">
+            {currentView === 'projects-overview' ? 'Projects' : 
+             currentView === 'tasks-overview' ? 'Tasks' : 
+             currentView === 'clients-overview' ? 'Clients' : 'Overview'}
+            {activeStatFilter && (
+              <>
+                <span className="text-neutral-500 font-normal text-sm" style={{ 
+                  transform: 'translateY(-6px)',
+                  marginLeft: '5px',
+                  marginRight: '5px'
+                }}>•</span>
+                <span className="text-2xl font-normal text-slate-600 font-dm-sans">
+                  {activeStatFilter === 'all' ? (
+                    currentView === 'projects-overview' ? 'All Projects' :
+                    currentView === 'tasks-overview' ? 'All Tasks' :
+                    'All Clients'
+                  ) : activeStatFilter === 'my' ? (
+                    currentView === 'projects-overview' ? 'My Projects' :
+                    currentView === 'tasks-overview' ? 'My Tasks' :
+                    'My Clients'
+                  ) : activeStatFilter === 'overdue' ? 'Overdue' :
+                    activeStatFilter === 'updates' ? 'Recent Updates' :
+                    activeStatFilter === 'completed' ? 'Completed' :
+                    activeStatFilter === 'active' ? 'Active' :
+                    activeStatFilter === 'leads' ? 'Leads' :
+                    activeStatFilter === 'onboarding' ? 'Onboarding' : activeStatFilter}
+                </span>
             </>
           )}
+              </h1>
         </div>
         
+        {/* Header Actions */}
         <div className="flex items-center space-x-4">
-
-
           {/* Filters - Only show for tasks views */}
           {(currentView === 'tasks-overview' || currentView === 'project-detail') && (
             <>
-
           {/* Team Member Filter Dropdown */}
           <div className="relative" ref={teamDropdownRef}>
             <button
               onClick={() => {
                 setTeamDropdownOpen(!teamDropdownOpen);
               }}
-              className="flex items-center space-x-3 px-3 py-1.5 text-sm font-medium rounded-lg transition-all duration-200 font-epilogue border whitespace-nowrap border-neutral-200 bg-transparent text-neutral-800 hover:border-neutral-300 hover:bg-neutral-50 hover:text-neutral-900"
+                  className="flex items-center space-x-3 px-3 py-1.5 text-sm font-medium rounded-lg transition-all duration-200 font-dm-sans border whitespace-nowrap border-neutral-200 bg-transparent text-neutral-800 hover:border-neutral-300 hover:bg-neutral-50 hover:text-neutral-900"
             >
               <div className="w-6 h-6 flex items-center justify-center">
                 {selectedAssignee === 'all' ? (
@@ -447,7 +671,7 @@ function TasksApp() {
                     setSelectedAssignee('all');
                     setTeamDropdownOpen(false);
                   }}
-                  className={`w-full flex items-center space-x-3 px-3 py-3 hover:bg-cream-dark text-left transition-colors font-epilogue rounded-md ${
+                      className={`w-full flex items-center space-x-3 px-3 py-3 hover:bg-cream-dark text-left transition-colors font-dm-sans rounded-md ${
                     selectedAssignee === 'all' ? 'bg-neutral-100 text-neutral-900' : 'text-neutral-700'
                   }`}
                 >
@@ -460,7 +684,7 @@ function TasksApp() {
                       setSelectedAssignee(member.id);
                       setTeamDropdownOpen(false);
                     }}
-                    className={`w-full flex items-center space-x-3 px-3 py-3 hover:bg-cream-dark text-left transition-colors font-epilogue rounded-md ${
+                        className={`w-full flex items-center space-x-3 px-3 py-3 hover:bg-cream-dark text-left transition-colors font-dm-sans rounded-md ${
                       selectedAssignee === member.id ? 'bg-neutral-100 text-neutral-900' : 'text-neutral-700'
                     }`}
                   >
@@ -476,104 +700,315 @@ function TasksApp() {
             </>
           )}
 
-          {(currentView === 'projects-overview' || currentView === 'tasks-overview' || currentView === 'project-detail') && (
+          <div className="flex items-center space-x-4">
+            {/* Project View Toggles - Only show for projects overview */}
+            {currentView === 'projects-overview' && (
+              <div className="flex items-center space-x-2">
             <button
-              onClick={() => (currentView === 'projects-overview') ? handleInstantProjectCreate() : handleInstantTaskCreate()}
-              className="px-4 py-2.5 h-10 bg-accent-500 hover:bg-accent-600 text-white text-sm font-medium rounded-lg transition-colors font-epilogue flex items-center"
-            >
-              <svg className="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  onClick={() => setProjectGroupBy('status')}
+                  className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors font-dm-sans ${
+                    projectGroupBy === 'status'
+                      ? 'bg-orange-100 text-orange-600'
+                      : 'text-gray-600 hover:text-gray-800'
+                  }`}
+                >
+                  Status
+                </button>
+                <button
+                  onClick={() => setProjectGroupBy('client')}
+                  className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors font-dm-sans ${
+                    projectGroupBy === 'client'
+                      ? 'bg-orange-100 text-orange-600'
+                      : 'text-gray-600 hover:text-gray-800'
+                  }`}
+                >
+                  Client
+                </button>
+              </div>
+            )}
+
+            {/* Add Button */}
+            {(currentView === 'projects-overview' || currentView === 'tasks-overview' || currentView === 'clients-overview' || currentView === 'project-detail') && (
+            <button
+                onClick={() => {
+                  if (currentView === 'projects-overview') {
+                    handleInstantProjectCreate();
+                  } else if (currentView === 'clients-overview') {
+                    handleInstantClientCreate();
+                  } else {
+                    handleInstantTaskCreate();
+                  }
+                }}
+                className="px-3 py-2 text-sm font-medium transition-all duration-200 font-dm-sans flex items-center gap-2 text-slate-700 hover:bg-gray-100 rounded-lg"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
               </svg>
-              {currentView === 'projects-overview' ? 'Add Project' : 'Add Task'}
+                {currentView === 'projects-overview' ? 'Add Project' : 
+                 currentView === 'clients-overview' ? 'Add Client' : 'Add Task'}
             </button>
           )}
+          </div>
         </div>
         </div>
 
-        {/* Context-Aware Stats */}
-        {(currentView === 'projects-overview' || currentView === 'tasks-overview') && (
-        <div className="dashboard-grid">
+      {/* Two Column Layout */}
+      <div className="flex gap-6 flex-1">
+        {/* Left Sidebar - Navigation & Filters */}
+        {(currentView === 'projects-overview' || currentView === 'tasks-overview' || currentView === 'clients-overview') && (
+          <div className="w-52 flex-shrink-0">
+            {/* Navigation Filters */}
+            <div className="space-y-2">
+              {/* Navigation Filter Buttons */}
         {currentView === 'projects-overview' ? (
           <>
-            <div 
-              onClick={() => setActiveStatFilter(activeStatFilter === 'all' ? null : 'all')}
-              className="cursor-pointer"
-            >
-              <StatCard
-                title="All Projects"
-                value={projects.filter(p => {
+                  <button 
+              onClick={() => setActiveStatFilter('all')}
+                    className={`w-full flex items-center justify-between pl-4 pr-2 py-2 rounded-full text-base font-medium transition-all duration-200 font-dm-sans ${
+                      activeStatFilter === 'all'
+                        ? 'bg-orange-100 text-orange-600'
+                        : 'text-slate-700 hover:bg-gray-100'
+                    }`}
+                  >
+                    <span>All Projects</span>
+                    <span className={`text-xs px-2 py-1 rounded-full min-w-[20px] flex items-center justify-center ${
+                      activeStatFilter === 'all' 
+                        ? 'bg-white text-gray-600' 
+                        : 'bg-gray-200 text-gray-600'
+                    }`}>
+                      {projects.filter(p => {
                   const status = p.status || (p.is_active ? 'active' : 'completed');
                   return status !== 'completed';
-                }).length.toString()}
-                change={activeStatFilter === 'all' ? 'Clear' : 'Show'}
-                changeType={activeStatFilter === 'all' ? 'positive' : 'neutral'}
-              />
-            </div>
-            <div 
-              onClick={() => setActiveStatFilter(activeStatFilter === 'overdue' ? null : 'overdue')}
-              className="cursor-pointer"
-            >
-              <StatCard
-                title="Overdue Projects"
-                value={projects.filter(p => p.deadline && new Date(p.deadline) < new Date()).length.toString()}
-                change={activeStatFilter === 'overdue' ? 'Clear' : 'Show'}
-                changeType={activeStatFilter === 'overdue' ? 'positive' : 'neutral'}
-              />
-            </div>
-            <div 
-              onClick={() => setActiveStatFilter(activeStatFilter === 'updates' ? null : 'updates')}
-              className="cursor-pointer"
-            >
-              <StatCard
-                title="Projects with Updates"
-                value={projects.filter(p => p.updated_at && new Date(p.updated_at) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)).length.toString()}
-                change={activeStatFilter === 'updates' ? 'Clear' : 'Show'}
-                changeType={activeStatFilter === 'updates' ? 'positive' : 'neutral'}
-              />
-            </div>
-            <div 
-              onClick={() => setActiveStatFilter(activeStatFilter === 'mentions' ? null : 'mentions')}
-              className="cursor-pointer"
-            >
-              <StatCard
-                title="Projects with Mentions"
-                value={projects.filter(p => p.description?.includes('@') || p.name?.includes('@')).length.toString()}
-                change={activeStatFilter === 'mentions' ? 'Clear' : 'Show'}
-                changeType={activeStatFilter === 'mentions' ? 'positive' : 'neutral'}
-              />
-            </div>
-          </>
-        ) : (
-          <>
-        <StatCard
-          title="Overdue Tasks"
-          value={filteredTasks.filter(t => t.due_date && new Date(t.due_date) < new Date()).length.toString()}
-          change="Past due date"
-          changeType="negative"
-        />
-        <StatCard
-          title="Tasks with Updates"
-              value={filteredTasks.filter(t => t.updated_at && new Date(t.updated_at) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)).length.toString()}
-              change="Updated this week"
-          changeType="positive"
-        />
-        <StatCard
-          title="Tasks with Mentions"
-              value={filteredTasks.filter(t => t.description?.includes('@') || t.title?.includes('@')).length.toString()}
-              change="Requiring attention"
-          changeType="neutral"
-        />
-        <StatCard
-              title="Tasks Assigned to You"
-              value={filteredTasks.filter(t => t.assigned_to && t.assigned_to.length > 0).length.toString()}
-              change="Your responsibility"
-              changeType="positive"
-        />
-          </>
-        )}
+                      }).length}
+                    </span>
+                  </button>
+                  <button
+                    onClick={() => setActiveStatFilter('my')}
+                    className={`w-full flex items-center justify-between pl-4 pr-2 py-2 rounded-full text-base font-medium transition-all duration-200 font-dm-sans ${
+                      activeStatFilter === 'my'
+                        ? 'bg-orange-100 text-orange-600'
+                        : 'text-slate-700 hover:bg-gray-100'
+                    }`}
+                  >
+                    <span>My Projects</span>
+                    <span className={`text-xs px-2 py-1 rounded-full min-w-[20px] flex items-center justify-center ${
+                      activeStatFilter === 'my'
+                        ? 'bg-white text-gray-600'
+                        : 'bg-gray-200 text-gray-600'
+                    }`}>
+                      {projects.filter(p => {
+                        const status = p.status || (p.is_active ? 'active' : 'completed');
+                        return status !== 'completed' && (p.created_by === currentUserId || p.assigned_to === currentUserId);
+                      }).length}
+                    </span>
+                  </button>
+                  <button 
+              onClick={() => setActiveStatFilter('overdue')}
+                    className={`w-full flex items-center justify-between pl-4 pr-2 py-2 rounded-full text-base font-medium transition-all duration-200 font-dm-sans ${
+                      activeStatFilter === 'overdue'
+                        ? 'bg-orange-100 text-orange-600'
+                        : 'text-slate-700 hover:bg-gray-100'
+                    }`}
+                  >
+                    <span>Overdue</span>
+                    <span className={`text-xs px-2 py-1 rounded-full min-w-[20px] flex items-center justify-center ${
+                      activeStatFilter === 'overdue' 
+                        ? 'bg-white text-gray-600' 
+                        : 'bg-gray-200 text-gray-600'
+                    }`}>
+                      {projects.filter(p => p.deadline && new Date(p.deadline) < new Date()).length}
+                    </span>
+                  </button>
+                  <button 
+                onClick={() => setActiveStatFilter('updates')}
+                    className={`w-full flex items-center justify-between pl-4 pr-2 py-2 rounded-full text-base font-medium transition-all duration-200 font-dm-sans ${
+                      activeStatFilter === 'updates'
+                        ? 'bg-orange-100 text-orange-600'
+                        : 'text-slate-700 hover:bg-gray-100'
+                    }`}
+                  >
+                    <span>Recent Updates</span>
+                    <span className={`text-xs px-2 py-1 rounded-full min-w-[20px] flex items-center justify-center ${
+                      activeStatFilter === 'updates' 
+                        ? 'bg-white text-gray-600' 
+                        : 'bg-gray-200 text-gray-600'
+                    }`}>
+                      {projects.filter(p => {
+                        if (!p.updated_at) return false;
+                        const updatedDate = new Date(p.updated_at);
+                        const threeDaysAgo = new Date();
+                        threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+                        return updatedDate > threeDaysAgo;
+                      }).length}
+                    </span>
+                  </button>
+            </>
+          ) : currentView === 'tasks-overview' ? (
+            <>
+                  <button 
+                    onClick={() => setActiveStatFilter('all')}
+                    className={`w-full flex items-center justify-between pl-4 pr-2 py-2 rounded-full text-base font-medium transition-all duration-200 font-dm-sans ${
+                      activeStatFilter === 'all'
+                        ? 'bg-orange-100 text-orange-600'
+                        : 'text-slate-700 hover:bg-gray-100'
+                    }`}
+                  >
+                    <span>All Tasks</span>
+                    <span className={`text-xs px-2 py-1 rounded-full min-w-[20px] flex items-center justify-center ${
+                      activeStatFilter === 'all' 
+                        ? 'bg-white text-gray-600' 
+                        : 'bg-gray-200 text-gray-600'
+                    }`}>
+                      {tasks.length}
+                    </span>
+                  </button>
+                  <button
+                    onClick={() => setActiveStatFilter('my')}
+                    className={`w-full flex items-center justify-between pl-4 pr-2 py-2 rounded-full text-base font-medium transition-all duration-200 font-dm-sans ${
+                      activeStatFilter === 'my'
+                        ? 'bg-orange-100 text-orange-600'
+                        : 'text-slate-700 hover:bg-gray-100'
+                    }`}
+                  >
+                    <span>My Tasks</span>
+                    <span className={`text-xs px-2 py-1 rounded-full min-w-[20px] flex items-center justify-center ${
+                      activeStatFilter === 'my'
+                        ? 'bg-white text-gray-600'
+                        : 'bg-gray-200 text-gray-600'
+                    }`}>
+                      {tasks.filter(t => t.assigned_to === currentUserId || t.created_by === currentUserId).length}
+                    </span>
+                  </button>
+                  <button 
+                    onClick={() => setActiveStatFilter('overdue')}
+                    className={`w-full flex items-center justify-between pl-4 pr-2 py-2 rounded-full text-base font-medium transition-all duration-200 font-dm-sans ${
+                      activeStatFilter === 'overdue'
+                        ? 'bg-orange-100 text-orange-600'
+                        : 'text-slate-700 hover:bg-gray-100'
+                    }`}
+                  >
+                    <span>Overdue</span>
+                    <span className={`text-xs px-2 py-1 rounded-full min-w-[20px] flex items-center justify-center ${
+                      activeStatFilter === 'overdue' 
+                        ? 'bg-white text-gray-600' 
+                        : 'bg-gray-200 text-gray-600'
+                    }`}>
+                      {tasks.filter(t => t.due_date && new Date(t.due_date) < new Date()).length}
+                    </span>
+                  </button>
+                  <button 
+                    onClick={() => setActiveStatFilter('completed')}
+                    className={`w-full flex items-center justify-between pl-4 pr-2 py-2 rounded-full text-base font-medium transition-all duration-200 font-dm-sans ${
+                      activeStatFilter === 'completed'
+                        ? 'bg-orange-100 text-orange-600'
+                        : 'text-slate-700 hover:bg-gray-100'
+                    }`}
+                  >
+                    <span>Completed</span>
+                    <span className={`text-xs px-2 py-1 rounded-full min-w-[20px] flex items-center justify-center ${
+                      activeStatFilter === 'completed' 
+                        ? 'bg-white text-gray-600' 
+                        : 'bg-gray-200 text-gray-600'
+                    }`}>
+                      {tasks.filter(t => t.status === 'completed').length}
+                    </span>
+                  </button>
+            </>
+          ) : currentView === 'clients-overview' ? (
+            <>
+                  <button 
+                    onClick={() => setActiveStatFilter('all')}
+                    className={`w-full flex items-center justify-between pl-4 pr-2 py-2 rounded-full text-base font-medium transition-all duration-200 font-dm-sans ${
+                      activeStatFilter === 'all'
+                        ? 'bg-orange-100 text-orange-600'
+                        : 'text-slate-700 hover:bg-gray-100'
+                    }`}
+                  >
+                    <span>All Clients</span>
+                    <span className={`text-xs px-2 py-1 rounded-full min-w-[20px] flex items-center justify-center ${
+                      activeStatFilter === 'all' 
+                        ? 'bg-white text-gray-600' 
+                        : 'bg-gray-200 text-gray-600'
+                    }`}>
+                      {clients.length}
+                    </span>
+                  </button>
+                  <button
+                    onClick={() => setActiveStatFilter('my')}
+                    className={`w-full flex items-center justify-between pl-4 pr-2 py-2 rounded-full text-base font-medium transition-all duration-200 font-dm-sans ${
+                      activeStatFilter === 'my'
+                        ? 'bg-orange-100 text-orange-600'
+                        : 'text-slate-700 hover:bg-gray-100'
+                    }`}
+                  >
+                    <span>My Clients</span>
+                    <span className={`text-xs px-2 py-1 rounded-full min-w-[20px] flex items-center justify-center ${
+                      activeStatFilter === 'my'
+                        ? 'bg-white text-gray-600'
+                        : 'bg-gray-200 text-gray-600'
+                    }`}>
+                      {clients.filter(c => c.created_by === currentUserId || c.assigned_to === currentUserId).length}
+                    </span>
+                  </button>
+                  <button 
+                    onClick={() => setActiveStatFilter('active')}
+                    className={`w-full flex items-center justify-between pl-4 pr-2 py-2 rounded-full text-base font-medium transition-all duration-200 font-dm-sans ${
+                      activeStatFilter === 'active'
+                        ? 'bg-orange-100 text-orange-600'
+                        : 'text-slate-700 hover:bg-gray-100'
+                    }`}
+                  >
+                    <span>Active</span>
+                    <span className={`text-xs px-2 py-1 rounded-full min-w-[20px] flex items-center justify-center ${
+                      activeStatFilter === 'active' 
+                        ? 'bg-white text-gray-600' 
+                        : 'bg-gray-200 text-gray-600'
+                    }`}>
+                      {clients.filter(c => c.status === 'active').length}
+                    </span>
+                  </button>
+                  <button 
+                    onClick={() => setActiveStatFilter('leads')}
+                    className={`w-full flex items-center justify-between pl-4 pr-2 py-2 rounded-full text-base font-medium transition-all duration-200 font-dm-sans ${
+                      activeStatFilter === 'leads'
+                        ? 'bg-orange-100 text-orange-600'
+                        : 'text-slate-700 hover:bg-gray-100'
+                    }`}
+                  >
+                    <span>Leads</span>
+                    <span className={`text-xs px-2 py-1 rounded-full min-w-[20px] flex items-center justify-center ${
+                      activeStatFilter === 'leads' 
+                        ? 'bg-white text-gray-600' 
+                        : 'bg-gray-200 text-gray-600'
+                    }`}>
+                      {clients.filter(c => c.status === 'leads').length}
+                    </span>
+                  </button>
+                  <button
+                    onClick={() => setActiveStatFilter('onboarding')}
+                    className={`w-full flex items-center justify-between pl-4 pr-2 py-2 rounded-full text-base font-medium transition-all duration-200 font-dm-sans ${
+                      activeStatFilter === 'onboarding'
+                        ? 'bg-orange-100 text-orange-600'
+                        : 'text-slate-700 hover:bg-gray-100'
+                    }`}
+                  >
+                    <span>Onboarding</span>
+                    <span className={`text-xs px-2 py-1 rounded-full min-w-[20px] flex items-center justify-center ${
+                      activeStatFilter === 'onboarding' 
+                        ? 'bg-white text-gray-600' 
+                        : 'bg-gray-200 text-gray-600'
+                    }`}>
+                      {clients.filter(c => c.status === 'onboarding').length}
+                    </span>
+                  </button>
+                </>
+              ) : null}
         </div>
-        )}
       </div>
+        )}
+
+        {/* Right Content Area */}
+        <div className="flex-1 overflow-x-auto">
 
       {/* Task View */}
       <div className="data-section-container">
@@ -583,14 +1018,15 @@ function TasksApp() {
               projects={projects}
               teamMembers={teamMembers}
               activeStatFilter={activeStatFilter}
+              groupBy={projectGroupBy}
               onProjectSelect={(projectId) => {
                 navigate(`/projects/${projectId}`);
               }}
             />
           ) : currentView === 'clients-overview' ? (
-            <ClientsPage />
+                             <ClientsPage activeStatFilter={activeStatFilter} />
           ) : (
-            <div className="p-6 rounded-[28px] overflow-hidden" style={{ backgroundColor: 'rgb(252, 252, 250)' }}>
+            <div className="dashboard-card">
               <KanbanBoard 
                 tasks={filteredTasks}
                 projects={projects}
@@ -600,6 +1036,12 @@ function TasksApp() {
                 onAddTask={handleAddTaskToColumn}
               />
             </div>
+          )}
+            </div>
+          </div>
+        </div>
+      </div>
+          </>
           )}
         </div>
       </div>
@@ -642,6 +1084,7 @@ function TasksApp() {
           isOpen={!!selectedTask}
           onClose={() => setSelectedTask(null)}
           onTaskUpdate={handleTaskUpdate}
+          onTaskDelete={handleTaskDelete}
         />
       )}
 
@@ -657,11 +1100,10 @@ function TasksApp() {
             setIsTaskDetailModalOpen(false);
           }}
           onTaskUpdate={handleTaskUpdate}
+          onTaskDelete={handleTaskDelete}
         />
       )}
 
-      </div>
-      </div>
     </div>
   );
 }

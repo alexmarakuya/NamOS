@@ -23,3 +23,4 @@ SELECT id, title, status, priority, project_id, assigned_to, created_at
 FROM tasks 
 LIMIT 5;
 
+

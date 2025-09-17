@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 
 interface LeftNavProps {
   activeApp: 'financial' | 'timesheet' | 'projects' | 'tasks' | 'clients';
@@ -6,10 +6,7 @@ interface LeftNavProps {
 }
 
 const LeftNav: React.FC<LeftNavProps> = ({ activeApp, onAppChange }) => {
-  const [isHovered, setIsHovered] = useState(false);
-  
-  // Show expanded state when hovered
-  const showExpanded = isHovered;
+  // Always keep compact - no expansion
 
   const navItems = [
     {
@@ -69,35 +66,27 @@ const LeftNav: React.FC<LeftNavProps> = ({ activeApp, onAppChange }) => {
   ];
 
   return (
-    <div
-      className={`fixed left-0 top-0 h-full dashboard-sidebar border-r border-neutral-700 transition-all duration-300 ease-in-out z-50 ${
-        showExpanded ? 'w-64' : 'w-16'
-      }`}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
-      {/* Header */}
-      <div className="p-4 border-b overflow-hidden" style={{ borderColor: 'var(--border-primary)' }}>
-        <div className="flex items-center min-w-0">
-          <div className="flex-shrink-0">
-            <div className="w-8 h-8 bg-accent-500 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm braun-text">N</span>
-            </div>
-          </div>
-          <div className={`ml-3 transition-opacity duration-300 min-w-0 ${showExpanded ? 'opacity-100' : 'opacity-0'}`}>
-            <h1 className="font-semibold text-lg braun-text truncate" style={{ color: 'var(--text-primary)' }}>
-              NamOS
-            </h1>
-            <p className="text-xs braun-text truncate" style={{ color: 'var(--text-secondary)' }}>
-              Dashboard
-            </p>
+    <div className="h-full w-20 bg-white flex flex-col flex-shrink-0">
+      {/* Header - App Logo */}
+      <div className="pt-8 pb-3 flex justify-center">
+        <div className="w-12 h-12 rounded-xl flex items-center justify-center relative group">
+          {/* Wave/River Icon */}
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-slate-800">
+            <path d="M2 12c2-2 4-2 6 0s4 2 6 0 4-2 6 0"/>
+            <path d="M2 8c2-2 4-2 6 0s4 2 6 0 4-2 6 0"/>
+            <path d="M2 16c2-2 4-2 6 0s4 2 6 0 4-2 6 0"/>
+          </svg>
+          
+          {/* Tooltip */}
+          <div className="absolute left-14 top-1/2 transform -translate-y-1/2 bg-white/90 backdrop-blur-sm text-gray-800 px-3 py-2 rounded-full text-sm opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none whitespace-nowrap z-50 border border-gray-200/50 shadow-sm">
+            NamOS
           </div>
         </div>
       </div>
 
       {/* Navigation Items */}
-      <nav className="mt-8">
-        <div className="px-2 space-y-2">
+      <nav className="flex-1 py-4">
+        <div className="space-y-2 flex flex-col items-center">
           {navItems.map((item) => {
             const isActive = activeApp === item.id;
             
@@ -105,54 +94,54 @@ const LeftNav: React.FC<LeftNavProps> = ({ activeApp, onAppChange }) => {
               <button
                 key={item.id}
                 onClick={() => onAppChange(item.id)}
-                className={`w-full flex items-center px-3 py-3 rounded-lg transition-all duration-200 group ${
+                className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-200 relative group ${
                   isActive
-                    ? 'bg-accent-500 text-white'
-                    : 'text-neutral-400 hover:bg-neutral-700 hover:text-white'
+                    ? 'bg-orange-100 text-orange-600 border border-orange-200'
+                    : 'text-slate-800 hover:bg-gray-100'
                 }`}
+                style={isActive ? { 
+                  boxShadow: '0 4px 12px rgba(251, 146, 60, 0.2)' 
+                } : {}}
               >
-                <div className="flex-shrink-0">
-                  {item.icon}
-                </div>
-                <div className={`ml-3 transition-opacity duration-300 min-w-0 ${showExpanded ? 'opacity-100' : 'opacity-0'}`}>
-                  <span className="text-sm font-medium braun-text truncate block">
-                    {item.name}
-                  </span>
-                </div>
+                {item.icon}
                 
-                {/* Tooltip for collapsed state */}
-                {!showExpanded && (
-                  <div className="absolute left-16 bg-accent-secondary text-white px-2 py-1 rounded text-xs braun-text opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap border border-accent-secondary ">
-                    {item.name}
-                    <div className="absolute left-0 top-1/2 transform -translate-y-1/2 -translate-x-1 w-2 h-2 bg-accent-secondary rotate-45 border-l border-b border-accent-secondary"></div>
-                  </div>
-                )}
+                {/* Tooltip */}
+                <div className="absolute left-14 top-1/2 transform -translate-y-1/2 bg-white/90 backdrop-blur-sm text-gray-800 px-3 py-2 rounded-full text-sm opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none whitespace-nowrap z-50 border border-gray-200/50 shadow-sm">
+                  {item.name}
+                </div>
               </button>
             );
           })}
         </div>
       </nav>
 
-      {/* Footer */}
-      <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-neutral-700">
-        <div className="flex items-center">
-          <div className="flex-shrink-0">
-            <div className="w-8 h-8 bg-neutral-700 rounded-full flex items-center justify-center">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-neutral-400">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                <circle cx="12" cy="7" r="4"></circle>
-              </svg>
-            </div>
+      {/* Footer - Additional Icons */}
+      <div className="p-2 space-y-2 flex flex-col items-center">
+        {/* User Avatar */}
+        <button className="w-12 h-12 rounded-full flex items-center justify-center bg-slate-100 hover:bg-slate-200 transition-all duration-200 relative group">
+          <div className="w-8 h-8 rounded-full bg-slate-600 flex items-center justify-center">
+            <span className="text-white font-medium text-sm">MJ</span>
           </div>
-          <div className={`ml-3 transition-opacity duration-300 ${showExpanded ? 'opacity-100' : 'opacity-0'}`}>
-            <p className="text-neutral-300 text-sm braun-text whitespace-nowrap">
-              Admin User
-            </p>
-            <p className="text-neutral-500 text-xs braun-text whitespace-nowrap">
-              Online
-            </p>
+          
+          {/* Tooltip */}
+          <div className="absolute left-14 top-1/2 transform -translate-y-1/2 bg-white/90 backdrop-blur-sm text-gray-800 px-3 py-2 rounded-full text-sm opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none whitespace-nowrap z-50 border border-gray-200/50 shadow-sm">
+            Profile
           </div>
-        </div>
+        </button>
+        
+        {/* Help */}
+        <button className="w-12 h-12 rounded-full flex items-center justify-center text-slate-800 hover:bg-gray-100 hover:text-slate-800 transition-all duration-200 relative group">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+          </svg>
+          
+          {/* Tooltip */}
+          <div className="absolute left-14 top-1/2 transform -translate-y-1/2 bg-white/90 backdrop-blur-sm text-gray-800 px-3 py-2 rounded-full text-sm opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none whitespace-nowrap z-50 border border-gray-200/50 shadow-sm">
+            Help
+          </div>
+        </button>
       </div>
     </div>
   );

@@ -1,5 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Epilogue:wght@300;400;500;600;700;800&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Sometype+Mono:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&display=swap');
 
 /* Dark theme forced - v2.0 */
 
@@ -7,36 +6,36 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Root three-color theme variables - Light Background Design */
+/* Root three-color theme variables - Neutral Gray & Orange Design */
 :root {
-  --bg-primary: #F2EFE6;    /* Lighter cream background */
-  --bg-secondary: #F2EFE6;  /* Lighter cream card backgrounds */
-  --bg-tertiary: #92B590;   /* Medium sage green elevated surfaces */
-  --text-primary: #1A2E1B;  /* Darker forest green text */
-  --text-secondary: #1A2E1B; /* Darker forest green secondary text */
-  --text-tertiary: #92B590;  /* Medium sage green muted text */
-  --border-primary: #E8E3D7; /* Lighter beige subtle borders */
-  --border-secondary: #E8E3D7; /* Lighter beige stronger borders */
-  --accent: #92B590;        /* Medium sage green accent */
-  --accent-secondary: #2B3A2C; /* Dark forest green accent */
-  --success: #92B590;       /* Medium sage green */
-  --warning: #92B590;       /* Medium sage green */
-  --error: #92B590;         /* Medium sage green */
-  --chart-blue: #92B590;    /* Medium sage green */
-  --chart-purple: #92B590;  /* Medium sage green */
-  --chart-green: #92B590;   /* Medium sage green */
-  --chart-orange: #92B590;  /* Medium sage green */
+  --bg-primary: #FFFFFF;    /* Pure white background */
+  --bg-secondary: #F8F9FA;  /* Very light neutral card backgrounds */
+  --bg-tertiary: #F3F4F6;   /* Light gray elevated surfaces */
+  --text-primary: #1F2937;  /* Darker gray primary text */
+  --text-secondary: #374151; /* Darker gray secondary text */
+  --text-tertiary: #6B7280;  /* Medium gray muted text */
+  --border-primary: #E5E5E5; /* Neutral gray subtle borders */
+  --border-secondary: #D4D4D4; /* Neutral gray stronger borders */
+  --accent: #F97316;        /* Orange accent */
+  --accent-secondary: #6B7280; /* Medium gray accent */
+  --success: #10B981;       /* Green for success */
+  --warning: #F59E0B;       /* Amber for warning */
+  --error: #EF4444;         /* Red for error */
+  --chart-blue: #3B82F6;    /* Blue */
+  --chart-purple: #7C3AED;  /* Purple */
+  --chart-green: #10B981;   /* Green */
+  --chart-orange: #F97316;  /* Orange */
 }
 
 /* Override Tailwind's default neutral colors with our light theme */
-.bg-neutral-50 { background-color: #F2EFE6 !important; }
-.bg-neutral-100 { background-color: #F2EFE6 !important; }
-.bg-neutral-200 { background-color: #92B590 !important; }
+.bg-neutral-50 { background-color: #F8F9FA !important; }
+.bg-neutral-100 { background-color: #F1F3F4 !important; }
+.bg-neutral-200 { background-color: #E5E7EB !important; }
 .bg-neutral-300 { background-color: #9ca3af !important; }
 .bg-neutral-400 { background-color: #6b7280 !important; }
-.bg-neutral-700 { background-color: #92B590 !important; }
-.bg-neutral-800 { background-color: #92B590 !important; }
-.bg-neutral-900 { background-color: #2B3A2C !important; }
+.bg-neutral-700 { background-color: #374151 !important; }
+.bg-neutral-800 { background-color: #1F2937 !important; }
+.bg-neutral-900 { background-color: #111827 !important; }
 .bg-cream-dark { background-color: #E8E3D7 !important; }
 
 /* Hover state overrides */
@@ -44,19 +43,19 @@
 .hover\:bg-neutral-300:hover { background-color: #9ca3af !important; }
 .hover\:bg-neutral-400:hover { background-color: #6b7280 !important; }
 
-.text-neutral-200 { color: #2B3A2C !important; }
-.text-neutral-300 { color: #2B3A2C !important; }
-.text-neutral-400 { color: #2B3A2C !important; }
+.text-neutral-200 { color: #E5E7EB !important; }
+.text-neutral-300 { color: #D1D5DB !important; }
+.text-neutral-400 { color: #9CA3AF !important; }
 .text-neutral-500 { color: #6b7280 !important; }
 .text-neutral-600 { color: #4b5563 !important; }
 .text-neutral-700 { color: #374151 !important; }
-.text-neutral-800 { color: #1A2E1B !important; }
-.text-neutral-900 { color: #1A2E1B !important; }
+.text-neutral-800 { color: #1F2937 !important; }
+.text-neutral-900 { color: #111827 !important; }
 
-.border-neutral-200 { border-color: #E8E3D7 !important; }
-.border-neutral-700 { border-color: #E8E3D7 !important; }
+.border-neutral-200 { border-color: #E5E5E5 !important; }
+.border-neutral-700 { border-color: #D4D4D4 !important; }
 
-.text-white { color: #1A2E1B !important; }
+.text-white { color: #374151 !important; }
 
 /* Additional light theme overrides */
 .bg-white { background-color: #ffffff !important; }
@@ -95,14 +94,14 @@
 .border-accent-500 { border-color: var(--accent) !important; }
 
 /* Gray theme overrides for light background */
-.bg-gray-600 { background-color: #92B590 !important; }
-.bg-gray-700 { background-color: #92B590 !important; }
-.bg-gray-800 { background-color: #92B590 !important; }
+.bg-gray-600 { background-color: #4B5563 !important; }
+.bg-gray-700 { background-color: #374151 !important; }
+.bg-gray-800 { background-color: #1F2937 !important; }
 .hover\:bg-gray-600:hover { background-color: #92B590 !important; }
 .hover\:bg-gray-700:hover { background-color: #2B3A2C !important; }
-.text-gray-300 { color: #1A2E1B !important; }
-.text-gray-400 { color: #92B590 !important; }
-.border-gray-600 { border-color: #E8E3D7 !important; }
+.text-gray-300 { color: #D1D5DB !important; }
+.text-gray-400 { color: #9CA3AF !important; }
+.border-gray-600 { border-color: #E5E5E5 !important; }
 
 /* Force main content area to match sidebar exactly */
 .dashboard-main,
@@ -111,49 +110,49 @@
 }
 
   .dashboard-main {
-    margin-left: 120px !important; /* 64px sidebar width + 56px for balanced composition */
-    margin-right: 80px !important; /* Reduced right margin */
-    max-width: calc(100vw - 200px) !important; /* Full viewport minus left and right margins */
+    margin-left: 0px !important; /* No left margin - using flexbox layout */
+    margin-right: 0px !important; /* No right margin - full width */
+    max-width: none !important; /* Full flex expansion */
   }
 
   /* Responsive margins for smaller screens */
   @media (max-width: 1536px) {
     .dashboard-main {
-      margin-left: 100px !important; /* Reduced left margin for smaller screens */
-      margin-right: 60px !important;
-      max-width: calc(100vw - 160px) !important;
+      margin-left: 0px !important; /* No left margin - using flexbox layout */
+      margin-right: 0px !important;
+      max-width: none !important;
     }
   }
 
   @media (max-width: 1280px) {
     .dashboard-main {
-      margin-left: 88px !important; /* Further reduced left margin */
-      margin-right: 48px !important;
-      max-width: calc(100vw - 136px) !important;
+      margin-left: 0px !important; /* No left margin - using flexbox layout */
+      margin-right: 0px !important;
+      max-width: none !important;
     }
   }
 
   @media (max-width: 1024px) {
     .dashboard-main {
-      margin-left: 80px !important; /* Balanced for tablet screens */
-      margin-right: 32px !important;
-      max-width: calc(100vw - 112px) !important;
+      margin-left: 0px !important; /* No left margin - using flexbox layout */
+      margin-right: 0px !important;
+      max-width: none !important;
     }
   }
 
   @media (max-width: 768px) {
     .dashboard-main {
-      margin-left: 76px !important; /* Maintain balance on mobile */
-      margin-right: 24px !important;
-      max-width: calc(100vw - 100px) !important;
+      margin-left: 0px !important; /* No left margin - using flexbox layout */
+      margin-right: 0px !important;
+      max-width: none !important;
     }
   }
 
   @media (max-width: 640px) {
     .dashboard-main {
-      margin-left: 72px !important; /* Minimum balanced margin */
-      margin-right: 16px !important;
-      max-width: calc(100vw - 88px) !important;
+      margin-left: 0px !important; /* No left margin - using flexbox layout */
+      margin-right: 0px !important;
+      max-width: none !important;
     }
   }
 
@@ -175,7 +174,7 @@ html {
 
 body {
   margin: 0;
-  font-family: 'Epilogue', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background-color: var(--bg-primary);
@@ -211,12 +210,12 @@ body {
   background: #3d3d3d;
 }
 
-/* Typography hierarchy with Epilogue */
+/* Typography hierarchy with DM Sans */
 h1, h2, h3, h4, h5, h6 {
   font-weight: 600;
   letter-spacing: -0.02em;
   margin: 0;
-  font-family: 'Epilogue', sans-serif;
+  font-family: 'DM Sans', sans-serif;
 }
 
 /* Braun design principles */
@@ -253,23 +252,23 @@ textarea:focus {
 }
 
 code, pre, .mono {
-  font-family: 'Sometype Mono', Monaco, Consolas, monospace;
+  font-family: 'DM Sans', sans-serif;
   font-size: 0.9em;
   font-weight: 400;
 }
 
 /* Font utility classes */
-.font-epilogue {
-  font-family: 'Epilogue', sans-serif;
+.font-dm-sans {
+  font-family: 'DM Sans', sans-serif;
 }
 
 .font-mono {
-  font-family: 'Sometype Mono', Monaco, Consolas, monospace;
+  font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
 /* Enhanced number styling */
 .number {
-  font-family: 'Sometype Mono', monospace;
+  font-family: 'DM Sans', sans-serif;
   font-weight: 500;
   font-variant-numeric: tabular-nums;
 }
@@ -291,26 +290,34 @@ code, pre, .mono {
   .dashboard-main {
     background-color: var(--bg-primary) !important;
     min-height: 100vh;
+    padding: 0;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  /* Exception: Project details page needs padding */
+  .dashboard-main.project-detail {
     padding: 16px;
   }
 
-         /* Data section container with off-white background */
-         .data-section-container {
-           background-color: rgb(252, 252, 250);
-           padding: 0;
-           margin: 0;
-           border-radius: 28px;
-           overflow: hidden;
-           display: flex;
-           flex-direction: column;
-           gap: 24px;
-           height: calc(100vh - 200px);
-           flex: 1;
-         }
+         /* Data section container */
+.data-section-container {
+  background-color: transparent;
+  padding: 0;
+  margin: 0;
+  border-radius: 0;
+  overflow: visible;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  height: calc(100vh - 200px);
+  flex: 1;
+}
 
          /* Modern card design */
          .dashboard-card {
-           padding: 24px;
+           padding: 0;
          }
 
 
@@ -318,8 +325,7 @@ code, pre, .mono {
   .dashboard-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 24px;
-    margin-bottom: 24px;
+    gap: 32px;
   }
 
   /* Responsive breakpoints for stats grid */
@@ -343,11 +349,11 @@ code, pre, .mono {
 
   /* Card components */
   .card {
-    @apply bg-neutral-800 border border-neutral-700;
+    @apply bg-neutral-800 border border-gray-200;
   }
 
   .card-header {
-    @apply border-b border-neutral-700 bg-neutral-800;
+    @apply border-b border-gray-200 bg-neutral-800;
   }
 
   /* Navigation */
@@ -361,16 +367,16 @@ code, pre, .mono {
 
   /* Tables */
   .table-container {
-    @apply bg-neutral-800 border border-neutral-700;
+    @apply bg-neutral-800 border border-gray-200;
   }
 
   .table-header {
-    @apply bg-neutral-700 border-b border-neutral-700;
+    @apply bg-neutral-700 border-b border-gray-200;
     padding: 0.75rem 1.5rem !important;
   }
 
   .table-row {
-    @apply border-b border-neutral-700 hover:bg-neutral-700;
+    @apply border-b border-gray-200 hover:bg-neutral-700;
   }
 
          .table-cell {
@@ -396,7 +402,7 @@ code, pre, .mono {
 
   /* Filters */
   .filter-container {
-    @apply bg-neutral-800 border-b border-neutral-700;
+    @apply bg-neutral-800 border-b border-gray-200;
     padding: 1rem 1.5rem !important;
   }
 
@@ -421,7 +427,7 @@ code, pre, .mono {
 
   .stat-title {
     color: var(--text-secondary);
-    font-family: 'Epilogue', sans-serif;
+    font-family: 'DM Sans', sans-serif;
     font-size: 12px;
     font-weight: 500;
     text-transform: uppercase;
@@ -431,7 +437,7 @@ code, pre, .mono {
 
          .stat-value {
            color: var(--text-primary);
-           font-family: 'Sometype Mono', monospace;
+           font-family: 'DM Sans', sans-serif;
            font-size: 35px;
            font-weight: 400;
            line-height: 1.1;
@@ -446,20 +452,97 @@ code, pre, .mono {
     display: flex;
     align-items: center;
     gap: 4px;
+    color: #9CA3AF; /* Override text-primary with a lighter gray */
   }
 
 
   .stat-change-positive {
-    @apply text-green-400;
+    @apply text-green-500;
   }
 
   .stat-change-negative {
-    @apply text-red-400;
+    @apply text-red-500;
   }
 
-  .stat-change-neutral {
-    @apply text-neutral-300;
-  }
+.stat-change-neutral {
+  color: #a8a29e !important;
+}
+
+/* Hide scrollbars while maintaining scroll functionality */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* Internet Explorer 10+ */
+  scrollbar-width: none;  /* Firefox */
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;  /* Safari and Chrome */
+}
+
+/* Button variants - Slightly bigger */
+.btn-sm {
+  @apply px-3 py-1.5 text-sm; /* Slightly bigger padding */
+}
+
+.btn-xs {
+  @apply px-2 py-1 text-xs; /* Small but not tiny */
+}
+
+.btn-icon-sm {
+  @apply w-5 h-5; /* Slightly bigger icons */
+}
+
+.btn-icon-xs {
+  @apply w-4 h-4; /* Small but not tiny icons */
+}
+
+/* Clean button styles matching reference image */
+.btn-ghost {
+  @apply bg-white text-slate-800 border border-gray-200 hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 rounded-lg;
+}
+
+.btn-white {
+  @apply bg-white text-slate-800 border border-gray-200 hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 rounded-lg;
+}
+
+.btn-light {
+  @apply bg-gray-50 text-slate-800 border border-gray-200 hover:bg-gray-100 hover:border-gray-300 transition-all duration-200 rounded-lg;
+}
+
+/* Navigation-style active state for buttons */
+.btn-active {
+  @apply bg-white text-orange-600 border border-orange-200 rounded-lg;
+}
+
+/* Modern dropdown styling matching reference */
+.dropdown-modern {
+  @apply bg-white border border-gray-200 rounded-xl shadow-lg z-50 py-2 overflow-hidden;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.dropdown-item {
+  @apply w-full text-left px-4 py-3 text-sm text-slate-800 hover:bg-gray-50 transition-colors duration-150 font-dm-sans;
+  border: none;
+  background: none;
+}
+
+.dropdown-item.active {
+  @apply bg-gray-50 text-slate-900;
+}
+
+.dropdown-item:first-child {
+  @apply rounded-t-xl;
+}
+
+.dropdown-item:last-child {
+  @apply rounded-b-xl;
+}
+
+/* Modern dropdown button styling */
+.dropdown-button {
+  @apply bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-slate-800 hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 font-dm-sans flex items-center justify-between;
+}
+
+.dropdown-button:focus {
+  @apply border-gray-300 ring-2 ring-gray-100;
 }
 
 /* Custom dropdown scrollbar positioning */
@@ -517,4 +600,25 @@ code, pre, .mono {
 /* Prevent layout shifts during updates */
 .task-list {
   contain: layout style;
+}
+
+} /* Close @layer components */
+
+/* Remove all focus styles from buttons */
+button:focus,
+button:focus-visible,
+.btn:focus,
+.btn:focus-visible,
+input[type="button"]:focus,
+input[type="submit"]:focus,
+input[type="reset"]:focus {
+  outline: none !important;
+  box-shadow: none !important;
+  border-color: inherit !important;
+}
+
+/* Remove focus ring from all interactive elements */
+*:focus {
+  outline: none !important;
+  box-shadow: none !important;
 }

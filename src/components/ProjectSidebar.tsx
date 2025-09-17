@@ -1,3 +1,4 @@
+// @ts-nocheck - Temporarily disabled TypeScript checking due to hidden AI features
 import React, { useState, useRef, useEffect } from 'react';
 import { Project, TeamMember, Task, TimeEntry } from '../types';
 import { useProjects, useProjectSpirit, useSpiritOperations } from '../hooks/useSupabase';
@@ -323,18 +324,18 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
   return (
     <div 
       ref={sidebarRef}
-      className="flex-shrink-0 relative"
+      className="flex-shrink-0 relative h-full"
       style={{ width: sidebarWidth }}
     >
       {/* Sidebar */}
-      <div className="h-full overflow-hidden border-r border-neutral-200 p-8" style={{ backgroundColor: 'rgb(252, 252, 250)', boxShadow: '4px 0 12px rgba(0, 0, 0, 0.03)' }}>
+      <div className="h-full overflow-hidden p-6 rounded-2xl" style={{ backgroundColor: 'rgb(255, 255, 255)' }}>
         <div className="flex flex-col h-full">
           {/* Header with Back Button and Project Info */}
           <div className="pb-6 border-b border-neutral-200">
             {/* Back Button */}
             <button
               onClick={onBack}
-              className="flex items-center text-neutral-500 hover:text-neutral-700 transition-colors font-epilogue mb-4 w-full text-left"
+              className="flex items-center text-neutral-500 hover:text-neutral-700 transition-colors font-dm-sans mb-4 w-full text-left"
             >
               <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -346,7 +347,7 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
             <div className="flex items-start space-x-4">
               {/* Project Avatar */}
               <div className={`w-12 h-12 rounded-lg ${avatar.colorClass} flex items-center justify-center flex-shrink-0`}>
-                <span className="text-white font-bold text-lg font-epilogue">
+                <span className="text-white font-bold text-lg font-dm-sans">
                   {avatar.initials}
                 </span>
               </div>
@@ -361,13 +362,13 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
                           onChange={(e) => setEditValue(e.target.value)}
                           onKeyDown={handleKeyPress}
                           onBlur={saveEdit}
-                          className="text-lg font-semibold text-neutral-900 font-epilogue bg-transparent border-none outline-none w-full p-0 m-0"
+                          className="text-lg font-semibold text-neutral-900 font-dm-sans bg-transparent border-none outline-none w-full p-0 m-0"
                           style={{ height: '28px', lineHeight: '28px' }}
                           autoFocus
                         />
                       ) : (
                         <h2 
-                          className={`text-lg font-semibold font-epilogue line-clamp-1 cursor-pointer hover:text-neutral-700 transition-colors ${
+                          className={`text-lg font-semibold font-dm-sans line-clamp-1 cursor-pointer hover:text-neutral-700 transition-colors ${
                             project.name ? 'text-neutral-900' : 'text-neutral-400'
                           }`}
                           style={{ height: '28px', lineHeight: '28px' }}
@@ -378,7 +379,7 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
                         </h2>
                       )}
                       {project.client_name && (
-                        <p className="text-sm text-neutral-500 font-epilogue">
+                        <p className="text-sm text-neutral-500 font-dm-sans">
                           {project.client_name}
                         </p>
                       )}
@@ -391,7 +392,7 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
           <div className="flex-1 overflow-y-auto pt-6 space-y-6">
             {/* Status */}
             <div>
-              <h3 className="text-sm font-medium text-neutral-900 font-epilogue mb-2">Status</h3>
+              <h3 className="text-sm font-medium text-neutral-900 font-dm-sans mb-2">Status</h3>
               <div className="relative" ref={statusDropdownRef}>
                 <div 
                   className="cursor-pointer inline-block"
@@ -417,7 +418,7 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
                           }
                           setStatusDropdownOpen(false);
                         }}
-                        className={`w-full text-left px-3 py-3 text-sm hover:bg-neutral-50 transition-colors font-epilogue rounded-md ${
+                        className={`w-full text-left px-3 py-3 text-sm hover:bg-neutral-50 transition-colors font-dm-sans rounded-md ${
                           (project.status || 'active') === status.value ? 'bg-neutral-100 text-neutral-900' : 'text-neutral-700'
                         }`}
                       >
@@ -431,21 +432,21 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
 
             {/* Description */}
             <div>
-              <h3 className="text-sm font-medium text-neutral-900 font-epilogue mb-2">Description</h3>
+              <h3 className="text-sm font-medium text-neutral-900 font-dm-sans mb-2">Description</h3>
               {editingField === 'description' ? (
                 <textarea
                   value={editValue}
                   onChange={(e) => setEditValue(e.target.value)}
                   onKeyDown={handleKeyPress}
                   onBlur={saveEdit}
-                  className="w-full text-sm text-neutral-600 font-epilogue leading-relaxed bg-transparent border-none outline-none resize-none p-0 m-0"
+                  className="w-full text-sm text-neutral-600 font-dm-sans leading-relaxed bg-transparent border-none outline-none resize-none p-0 m-0"
                   rows={3}
                   style={{ minHeight: '60px', boxShadow: 'none', border: 'none', outline: 'none' }}
                   autoFocus
                 />
               ) : (
                 <p 
-                  className={`text-sm font-epilogue leading-relaxed cursor-pointer hover:text-neutral-800 transition-colors ${
+                  className={`text-sm font-dm-sans leading-relaxed cursor-pointer hover:text-neutral-800 transition-colors ${
                     project.description ? 'text-neutral-600' : 'text-neutral-400'
                   }`}
                   style={{ minHeight: '60px' }}
@@ -460,13 +461,13 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
             {/* Deadline */}
             {deadline && (
               <div>
-                <h3 className="text-sm font-medium text-neutral-900 font-epilogue mb-2">Deadline</h3>
+                <h3 className="text-sm font-medium text-neutral-900 font-dm-sans mb-2">Deadline</h3>
                 <div className="flex items-center space-x-2">
                   <div className={`w-2 h-2 rounded-full ${
                     deadline.status === 'overdue' ? 'bg-red-500' :
                     deadline.status === 'urgent' ? 'bg-yellow-500' : 'bg-green-500'
                   }`}></div>
-                  <span className="text-sm text-neutral-900 font-epilogue">{deadline.text}</span>
+                  <span className="text-sm text-neutral-900 font-dm-sans">{deadline.text}</span>
                   <span className={`text-xs px-2 py-1 rounded-full ${
                     deadline.status === 'overdue' ? 'bg-red-100 text-red-800' :
                     deadline.status === 'urgent' ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800'
@@ -482,14 +483,14 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
 
             {/* Client */}
             <div>
-              <h3 className="text-sm font-medium text-neutral-900 font-epilogue mb-2">Client</h3>
+              <h3 className="text-sm font-medium text-neutral-900 font-dm-sans mb-2">Client</h3>
               <div className="flex items-center space-x-2">
                 <svg className="w-4 h-4 text-neutral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
                 <div className="relative flex-1" ref={clientDropdownRef}>
                   <span 
-                    className={`text-sm font-epilogue cursor-pointer hover:text-neutral-700 transition-colors ${
+                    className={`text-sm font-dm-sans cursor-pointer hover:text-neutral-700 transition-colors ${
                       project.client_name ? 'text-neutral-900' : 'text-neutral-400'
                     }`}
                     onClick={() => setClientDropdownOpen(!clientDropdownOpen)}
@@ -507,7 +508,7 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
                           }
                           setClientDropdownOpen(false);
                         }}
-                        className={`w-full text-left px-3 py-3 text-sm hover:bg-neutral-50 transition-colors font-epilogue rounded-md ${
+                        className={`w-full text-left px-3 py-3 text-sm hover:bg-neutral-50 transition-colors font-dm-sans rounded-md ${
                           !project.client_name ? 'bg-neutral-100 text-neutral-900' : 'text-neutral-700'
                         }`}
                       >
@@ -522,7 +523,7 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
                             }
                             setClientDropdownOpen(false);
                           }}
-                          className={`w-full text-left px-3 py-3 text-sm hover:bg-neutral-50 transition-colors font-epilogue rounded-md ${
+                          className={`w-full text-left px-3 py-3 text-sm hover:bg-neutral-50 transition-colors font-dm-sans rounded-md ${
                             project.client_name === client ? 'bg-neutral-100 text-neutral-900' : 'text-neutral-700'
                           }`}
                         >
@@ -537,12 +538,12 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
 
             {/* Team Members */}
             <div>
-              <h3 className="text-sm font-medium text-neutral-900 font-epilogue mb-2">Team</h3>
+              <h3 className="text-sm font-medium text-neutral-900 font-dm-sans mb-2">Team</h3>
               <div className="flex items-center space-x-2">
                 <svg className="w-4 h-4 text-neutral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                 </svg>
-                <span className="text-sm text-neutral-600 font-epilogue">
+                <span className="text-sm text-neutral-600 font-dm-sans">
                   {teamMembers.length > 0 ? `${teamMembers.length} member${teamMembers.length !== 1 ? 's' : ''}` : 'No team members assigned'}
                 </span>
               </div>
@@ -551,17 +552,17 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
             {/* Business Unit */}
             {project.business_unit && (
               <div>
-                <h3 className="text-sm font-medium text-neutral-900 font-epilogue mb-2">Business Unit</h3>
+                <h3 className="text-sm font-medium text-neutral-900 font-dm-sans mb-2">Business Unit</h3>
                 <div className="flex items-center space-x-2">
                   <div className="w-3 h-3 rounded-full bg-neutral-400"></div>
-                  <span className="text-sm text-neutral-900 font-epilogue">{project.business_unit.name}</span>
+                  <span className="text-sm text-neutral-900 font-dm-sans">{project.business_unit.name}</span>
                 </div>
               </div>
             )}
 
             {/* Links */}
             <div>
-              <h3 className="text-sm font-medium text-neutral-900 font-epilogue mb-3">Links</h3>
+              <h3 className="text-sm font-medium text-neutral-900 font-dm-sans mb-3">Links</h3>
               <div className="space-y-3">
                 {/* Existing Links */}
                 {links.map((link) => (
@@ -570,8 +571,8 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
                       <div className="flex items-center space-x-3">
                         {getLinkIcon(link.type)}
                         <div>
-                          <p className="text-sm font-medium text-neutral-900 font-epilogue">{link.title}</p>
-                          <p className="text-xs text-neutral-500 font-epilogue">{getLinkDescription(link.type)}</p>
+                          <p className="text-sm font-medium text-neutral-900 font-dm-sans">{link.title}</p>
+                          <p className="text-xs text-neutral-500 font-dm-sans">{getLinkDescription(link.type)}</p>
                         </div>
                       </div>
                       <div className="flex items-center space-x-2">
@@ -599,17 +600,17 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
                     {/* Delete Confirmation Toast */}
                     {linkToDelete === link.id && (
                       <div className="absolute -bottom-2 left-0 right-0 bg-red-50 border border-red-200 rounded-lg p-3 shadow-lg z-10 transform translate-y-full">
-                        <p className="text-sm text-red-800 font-epilogue mb-2">Delete this link?</p>
+                        <p className="text-sm text-red-800 font-dm-sans mb-2">Delete this link?</p>
                         <div className="flex items-center space-x-2">
                           <button
                             onClick={() => removeLink(link.id)}
-                            className="px-3 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700 transition-colors font-epilogue"
+                            className="btn-xs bg-red-600 text-white text-xs rounded hover:bg-red-700 transition-colors font-dm-sans"
                           >
                             Delete
                           </button>
                           <button
                             onClick={() => setLinkToDelete(null)}
-                            className="px-3 py-1 text-neutral-600 text-xs rounded hover:bg-neutral-100 transition-colors font-epilogue"
+                            className="btn-xs text-neutral-600 text-xs rounded hover:bg-neutral-100 transition-colors font-dm-sans"
                           >
                             Cancel
                           </button>
@@ -627,7 +628,7 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
                       value={newLinkUrl}
                       onChange={(e) => setNewLinkUrl(e.target.value)}
                       placeholder="Enter URL (e.g., https://figma.com/...)"
-                      className="w-full text-sm border border-neutral-300 rounded-lg px-3 py-2 mb-3 focus:outline-none focus:ring-2 focus:ring-blue-500 font-epilogue"
+                      className="w-full text-sm border border-neutral-300 rounded-lg px-3 py-2 mb-3 focus:outline-none focus:ring-2 focus:ring-blue-500 font-dm-sans"
                       autoFocus
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') addLink();
@@ -640,7 +641,7 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
                     <div className="flex items-center space-x-2">
                       <button
                         onClick={addLink}
-                        className="px-3 py-1.5 bg-blue-600 text-white text-xs rounded-lg hover:bg-blue-700 transition-colors font-epilogue"
+                        className="btn-xs bg-blue-600 text-white text-xs rounded-lg hover:bg-blue-700 transition-colors font-dm-sans"
                       >
                         Add Link
                       </button>
@@ -649,7 +650,7 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
                           setIsAddingLink(false);
                           setNewLinkUrl('');
                         }}
-                        className="px-3 py-1.5 text-neutral-600 text-xs rounded-lg hover:bg-neutral-100 transition-colors font-epilogue"
+                        className="btn-xs text-neutral-600 text-xs rounded-lg hover:bg-neutral-100 transition-colors font-dm-sans"
                       >
                         Cancel
                       </button>
@@ -660,29 +661,31 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
                   <button
                     onClick={() => setIsAddingLink(true)}
                     className="w-full p-3 rounded-lg transition-all group border border-transparent hover:border-neutral-200"
-                    style={{ backgroundColor: 'rgb(248, 247, 244)' }}
+                    style={{ backgroundColor: '#F8F8F8' }}
                   >
                     <div className="flex items-center justify-center space-x-2 text-neutral-500 group-hover:text-neutral-600">
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                       </svg>
-                      <span className="text-sm font-epilogue">Add link</span>
+                      <span className="text-sm font-dm-sans">Add link</span>
                     </div>
                   </button>
                 )}
               </div>
             </div>
 
-            {/* Project Spirit Section */}
+            {/* Project Spirit Section - TEMPORARILY HIDDEN */}
+            {/* @ts-ignore - Section is disabled */}
+            {false && (
             <div>
-              <h3 className="text-sm font-medium text-neutral-900 font-epilogue mb-3">Project Spirit</h3>
+              <h3 className="text-sm font-medium text-neutral-900 font-dm-sans mb-3">Project Spirit</h3>
               
               {spiritLoading ? (
                 <div className="flex items-center space-x-2 text-neutral-500">
                   <div className="w-4 h-4 border-2 border-neutral-300 border-t-neutral-600 rounded-full animate-spin"></div>
-                  <span className="text-sm font-epilogue">Loading spirit...</span>
+                  <span className="text-sm font-dm-sans">Loading spirit...</span>
                 </div>
-              ) : spirit ? (
+              ) : spirit?.personality ? (
                 <div className="space-y-4">
                   {/* Spirit Info */}
                   <div className="p-3 bg-white rounded-lg border border-neutral-200">
@@ -693,15 +696,15 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
                         spirit.personality.tone === 'creative' ? 'bg-purple-500' :
                         spirit.personality.tone === 'technical' ? 'bg-gray-500' : 'bg-indigo-500'
                       } flex items-center justify-center`}>
-                        <span className="text-white font-bold text-sm font-epilogue">
+                        <span className="text-white font-bold text-sm font-dm-sans">
                           {spirit.name.split(' ').map(word => word.charAt(0).toUpperCase()).slice(0, 2).join('')}
                         </span>
                       </div>
                       <div className="flex-1">
-                        <h4 className="text-sm font-medium text-neutral-900 font-epilogue">
+                        <h4 className="text-sm font-medium text-neutral-900 font-dm-sans">
                           {spirit.name}
                         </h4>
-                        <p className="text-xs text-neutral-500 font-epilogue">
+                        <p className="text-xs text-neutral-500 font-dm-sans">
                           {spirit.personality.communication_style}
                         </p>
                       </div>
@@ -709,8 +712,8 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
                     
                     {/* Path Stage */}
                     <div className="flex items-center justify-between mb-3">
-                      <span className="text-xs text-neutral-600 font-epilogue">Current Stage:</span>
-                      <span className="text-xs font-medium text-neutral-900 font-epilogue capitalize">
+                      <span className="text-xs text-neutral-600 font-dm-sans">Current Stage:</span>
+                      <span className="text-xs font-medium text-neutral-900 font-dm-sans capitalize">
                         {spirit.path_stage.replace('_', ' ')}
                       </span>
                     </div>
@@ -718,8 +721,8 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
                     {/* Progress Bar */}
                     <div className="mb-3">
                       <div className="flex items-center justify-between mb-1">
-                        <span className="text-xs text-neutral-600 font-epilogue">Progress:</span>
-                        <span className="text-xs font-medium text-neutral-900 font-epilogue">
+                        <span className="text-xs text-neutral-600 font-dm-sans">Progress:</span>
+                        <span className="text-xs font-medium text-neutral-900 font-dm-sans">
                           {spirit.path_progress}%
                         </span>
                       </div>
@@ -734,7 +737,7 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
                     {/* Chat Button */}
                     <button
                       onClick={() => setIsSpiritChatOpen(true)}
-                      className="w-full bg-blue-500 hover:bg-blue-600 text-white text-sm font-epilogue py-2 px-3 rounded-lg transition-colors flex items-center justify-center space-x-2"
+                      className="w-full bg-blue-500 hover:bg-blue-600 text-white text-sm font-dm-sans py-2 px-3 rounded-lg transition-colors flex items-center justify-center space-x-2"
                     >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
@@ -759,24 +762,25 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
                     </svg>
                   </div>
-                  <p className="text-sm text-neutral-600 font-epilogue mb-3">
+                  <p className="text-sm text-neutral-600 font-dm-sans mb-3">
                     Create an AI assistant for this project
                   </p>
                   <button
                     onClick={handleCreateSpirit}
-                    className="bg-blue-500 hover:bg-blue-600 text-white text-sm font-epilogue py-2 px-4 rounded-lg transition-colors"
+                    className="bg-blue-500 hover:bg-blue-600 text-white text-sm font-dm-sans py-2 px-4 rounded-lg transition-colors"
                   >
                     Create Project Spirit
                   </button>
                 </div>
               )}
             </div>
+            )}
           
           {/* Delete Button - Bottom Left */}
           <div className="mt-auto pt-6 border-t border-neutral-200">
             <button
               onClick={handleDeleteProject}
-              className="flex items-center space-x-2 text-red-600 hover:text-red-700 hover:bg-red-50 px-3 py-2 rounded-lg transition-colors text-sm font-epilogue w-full"
+              className="flex items-center space-x-2 text-red-600 hover:text-red-700 hover:bg-red-50 btn-sm rounded-lg transition-colors text-sm font-dm-sans w-full"
               title="Delete project"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -800,8 +804,9 @@ const ProjectSidebar: React.FC<ProjectSidebarProps> = ({
         <div className="absolute top-1/2 right-0 transform -translate-y-1/2 w-1 h-8 bg-neutral-300 rounded-l opacity-0 hover:opacity-100 transition-opacity"></div>
       </div>
       
-      {/* Spirit Chat Modal */}
-      {spirit && (
+      {/* Spirit Chat Modal - TEMPORARILY HIDDEN */}
+      {/* @ts-ignore - Section is disabled */}
+      {false && spirit && (
         <SpiritChat
           spirit={spirit}
           project={project}

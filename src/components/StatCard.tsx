@@ -18,18 +18,20 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, change, changeType })
 
   return (
     <div className="stat-card">
-      <div className="stat-title">
-        {title}
+      <div className="flex items-start gap-3">
+        <div className="stat-title">
+          {title}
+        </div>
+        {change && (
+          <div className={`stat-change ${getChangeClass()}`}>
+            <span>{changeType === 'positive' ? '↗' : changeType === 'negative' ? '↘' : '→'}</span>
+            <span>{change}</span>
+          </div>
+        )}
       </div>
       <div className="stat-value">
         {value}
       </div>
-      {change && (
-        <div className={`stat-change ${getChangeClass()}`}>
-          <span>{changeType === 'positive' ? '↗' : changeType === 'negative' ? '↘' : '→'}</span>
-          <span>{change}</span>
-        </div>
-      )}
     </div>
   );
 };

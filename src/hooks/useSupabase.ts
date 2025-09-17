@@ -1056,6 +1056,7 @@ export const useProjectOperations = () => {
     client_name?: string;
     business_unit_id?: string;
     status?: 'active' | 'upcoming' | 'completed' | 'on_hold';
+    project_type?: 'ongoing' | 'fixed-timeline';
     deadline?: string;
   }) => {
     try {
@@ -1089,6 +1090,7 @@ export const useProjectOperations = () => {
     client_name?: string;
     business_unit_id?: string;
     status?: 'active' | 'upcoming' | 'completed' | 'on_hold';
+    project_type?: 'ongoing' | 'fixed-timeline';
     deadline?: string;
     is_active?: boolean;
   }) => {
@@ -1153,11 +1155,52 @@ export const useProjectOperations = () => {
     return updateProject(projectId, { is_active: false, status: 'completed' });
   };
 
+  const duplicateProject = async (projectId: string, newName?: string) => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Get the original project
+      const { data: originalProject, error: fetchError } = await supabase
+        .from('projects')
+        .select('*')
+        .eq('id', projectId)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      // Create a copy with new name
+      const { data, error } = await supabase
+        .from('projects')
+        .insert([{
+          name: newName || `${originalProject.name} (Copy)`,
+          description: originalProject.description,
+          client_name: originalProject.client_name,
+          business_unit_id: originalProject.business_unit_id,
+          project_type: originalProject.project_type,
+          status: 'upcoming', // New projects start as upcoming
+          is_active: true
+        }])
+        .select('*')
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to duplicate project';
+      setError(errorMessage);
+      throw new Error(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
     createProject,
     updateProject,
     deleteProject,
     archiveProject,
+    duplicateProject,
     loading,
     error
   };
@@ -1291,7 +1334,8 @@ export const useClientsWithStatus = () => {
           }
         });
         
-        setClients(Array.from(clientMap.values()).sort((a, b) => a.name.localeCompare(b.name)));
+        const finalClients = Array.from(clientMap.values()).sort((a, b) => a.name.localeCompare(b.name));
+        setClients(finalClients);
       }
     } catch (err) {
       console.error('Error fetching clients:', err);
@@ -1385,9 +1429,75 @@ export const useClientOperations = () => {
     }
   }, []);
 
+  const updateClient = useCallback(async (clientId: string, updates: {
+    name?: string;
+    status?: string;
+    logo_url?: string;
+    contact_email?: string;
+    contact_phone?: string;
+    address?: string;
+    notes?: string;
+  }) => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const { data, error: updateError } = await supabase
+        .from('clients')
+        .update(updates)
+        .eq('id', clientId)
+        .select()
+        .single();
+
+      if (updateError) throw updateError;
+      return data;
+    } catch (err) {
+      console.error('Error updating client:', err);
+      setError(err instanceof Error ? err.message : 'Failed to update client');
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const deleteClient = useCallback(async (clientId: string) => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Check if client has any projects
+      const { data: projects, error: projectsError } = await supabase
+        .from('projects')
+        .select('id')
+        .eq('client_id', clientId);
+
+      if (projectsError) throw projectsError;
+
+      if (projects && projects.length > 0) {
+        throw new Error('Cannot delete client with existing projects. Please reassign or delete projects first.');
+      }
+
+      const { error: deleteError } = await supabase
+        .from('clients')
+        .delete()
+        .eq('id', clientId);
+
+      if (deleteError) throw deleteError;
+      return true;
+    } catch (err) {
+      console.error('Error deleting client:', err);
+      setError(err instanceof Error ? err.message : 'Failed to delete client');
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   return {
     updateClientStatus,
     createClient,
+    updateClient,
+    deleteClient,
     loading,
     error
   };
