@@ -19,7 +19,6 @@ const ProjectsPage: React.FC<ProjectsPageProps> = ({
   onProjectSelect 
 }) => {
   // TODO: Replace with actual user ID from auth context when implemented
-  const currentUserId = 'current-user';
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [statusFilter, setStatusFilter] = useState<ProjectStatus>('all');
 

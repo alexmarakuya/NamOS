@@ -68,7 +68,7 @@ function TasksApp() {
   // Get projects and team members
   const { projects = [], loading: projectsLoading, refetch: refetchProjects } = useProjects();
   const { teamMembers = [], loading: teamMembersLoading } = useTeamMembers();
-  const { clients = [], loading: clientsLoading, refetch: refetchClients } = useClientsWithStatus();
+  const { clients = [], refetch: refetchClients } = useClientsWithStatus();
   const { businessUnits } = useBusinessUnits();
   const { createProject, updateProject, deleteProject } = useProjectOperations();
   const { createClient } = useClientOperations();

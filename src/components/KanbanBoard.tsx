@@ -162,10 +162,6 @@ function KanbanBoard({ tasks, projects, teamMembers, onTaskUpdate, onTaskClick, 
       {/* Desktop: Flex layout with min-width columns and overflow */}
       <div className="hidden lg:flex lg:gap-3 h-full overflow-x-auto scrollbar-hide">
         {columns.map(column => {
-          const getColumnBackground = (columnId: string) => {
-            return ''; // Use inline style instead
-          };
-
           return (
             <div key={column.id} className="flex flex-col rounded-2xl p-4 min-w-[280px] w-[280px] flex-shrink-0 min-h-[800px]" style={{ 
               background: isProjectDetail 
@@ -346,12 +342,8 @@ function KanbanBoard({ tasks, projects, teamMembers, onTaskUpdate, onTaskClick, 
       {/* Mobile/Tablet: Horizontal scroll layout */}
       <div className="lg:hidden flex space-x-6 overflow-x-auto pb-4 h-full kanban-container p-5">
         {columns.map(column => {
-          const getColumnBackground = (columnId: string) => {
-            return ''; // Use inline style instead
-          };
-
           return (
-            <div key={column.id} className={`min-w-[280px] w-[280px] h-full flex flex-col flex-shrink-0 kanban-column ${getColumnBackground(column.id)} rounded-2xl p-3 min-h-[800px]`} style={{ 
+            <div key={column.id} className="min-w-[280px] w-[280px] h-full flex flex-col flex-shrink-0 kanban-column rounded-2xl p-3 min-h-[800px]" style={{ 
               background: isProjectDetail 
                 ? 'linear-gradient(to bottom, #FFFFFF 0%, #F8F8F8 100%)'
                 : 'linear-gradient(to bottom, #F8F8F8 0%, #FFFFFF 100%)'

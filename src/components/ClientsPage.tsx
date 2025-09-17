@@ -1,14 +1,11 @@
 import React, { useState } from 'react';
 import { useClientsWithStatus, useClientOperations } from '../hooks/useSupabase';
-import StatCard from './StatCard';
 
 interface ClientsPageProps {
   activeStatFilter?: string | null;
 }
 
 const ClientsPage: React.FC<ClientsPageProps> = ({ activeStatFilter }) => {
-  // TODO: Replace with actual user ID from auth context when implemented
-  const currentUserId = 'current-user';
   const { clients, loading, refetch } = useClientsWithStatus();
   const { updateClientStatus } = useClientOperations();
   const [draggedClient, setDraggedClient] = useState<any>(null);
@@ -86,7 +83,7 @@ const ClientsPage: React.FC<ClientsPageProps> = ({ activeStatFilter }) => {
           return client.status === activeStatFilter;
       }
     });
-  }, [clients, activeStatFilter, currentUserId]);
+  }, [clients, activeStatFilter]);
 
   // Group clients by status for Kanban
   const clientColumns = React.useMemo(() => {

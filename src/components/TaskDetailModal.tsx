@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { Task, Project, TeamMember, TimeEntry } from '../types';
+import { Task, Project, TeamMember } from '../types';
 import { useTaskOperations, useTimeEntries } from '../hooks/useSupabase';
 import { supabase } from '../lib/supabase';
 
