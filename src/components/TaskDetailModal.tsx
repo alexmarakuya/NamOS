@@ -37,7 +37,7 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
   const [timeLogDate, setTimeLogDate] = useState(new Date().toISOString().split('T')[0]);
   const [errors, setErrors] = useState<{[key: string]: string}>({});
   const [saving, setSaving] = useState<{[key: string]: boolean}>({});
-  const [activeTab, setActiveTab] = useState<'details' | 'comments' | 'files' | 'time'>('details');
+  const [activeTab, setActiveTab] = useState<'details' | 'files' | 'time'>('details');
   const [modalWidth, setModalWidth] = useState(Math.max(640, window.innerWidth * 0.48));
   const [isResizing, setIsResizing] = useState(false);
 
@@ -334,7 +334,7 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
         {/* Tab Navigation - Notion-like */}
         <div className="flex-shrink-0 px-12 pb-6">
           <div className="flex items-center space-x-6">
-            {(['details', 'comments', 'files', 'time'] as const).map((tab) => (
+            {(['details', 'files', 'time'] as const).map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
@@ -354,55 +354,68 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
         <div className="flex-1 px-12 pb-12 overflow-y-auto">
           {activeTab === 'details' && (
             <div className="space-y-8">
-              {/* Task Properties Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Status */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700 font-dm-sans">Status</label>
-                  <div className="flex items-center">
-                    {editingStatus ? (
-                      <select
-                        value={status}
-                        onChange={(e) => handleStatusChange(e.target.value as typeof task.status)}
-                        onBlur={() => setEditingStatus(false)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent font-dm-sans text-sm"
-                        autoFocus
-                      >
-                        <option value="backlog">Backlog</option>
-                        <option value="todo">To Do</option>
-                        <option value="in_progress">In Progress</option>
-                        <option value="review">In Review</option>
-                        <option value="done">Completed</option>
-                      </select>
-                    ) : (
-                      <span 
-                        className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium cursor-pointer transition-colors font-dm-sans ${
-                          status === 'done' ? 'bg-green-100 text-green-800' :
-                          status === 'in_progress' ? 'bg-blue-100 text-blue-800' :
-                          status === 'review' ? 'bg-purple-100 text-purple-800' :
-                          status === 'todo' ? 'bg-yellow-100 text-yellow-800' :
-                          'bg-gray-100 text-gray-800'
-                        }`}
-                        onClick={() => setEditingStatus(true)}
-                      >
-                        {status === 'done' ? 'Completed' : status.replace('_', ' ')}
-                      </span>
-                    )}
+              {/* Task Properties */}
+              <div className="space-y-1">
+                {/* Project */}
+                <div className="flex items-center py-1.5 hover:bg-gray-50 rounded-lg px-3 -mx-3 transition-colors">
+                  <div className="flex items-center space-x-3 w-32 flex-shrink-0">
+                    <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                    </svg>
+                    <span className="text-sm text-gray-600 font-dm-sans">Project</span>
+                  </div>
+                  <div className="flex-1">
+                    <select
+                      value={task.project_id}
+                      onChange={(e) => {
+                        const updates = { project_id: e.target.value };
+                        updateTask(task.id, updates);
+                        onTaskUpdate(task.id, updates);
+                      }}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent font-dm-sans text-sm"
+                    >
+                      {projects.map((project) => (
+                        <option key={project.id} value={project.id}>
+                          {project.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Due Date */}
+                <div className="flex items-center py-1.5 hover:bg-gray-50 rounded-lg px-3 -mx-3 transition-colors">
+                  <div className="flex items-center space-x-3 w-32 flex-shrink-0">
+                    <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <span className="text-sm text-gray-600 font-dm-sans">Deadline</span>
+                  </div>
+                  <div className="flex-1">
+                    <input
+                      type="date"
+                      value={task.due_date ? new Date(task.due_date).toISOString().split('T')[0] : ''}
+                      onChange={(e) => {
+                        const dateString = e.target.value || undefined;
+                        const updateTaskPayload = { due_date: dateString };
+                        const onTaskUpdatePayload = { due_date: dateString ? new Date(dateString) : undefined };
+                        updateTask(task.id, updateTaskPayload);
+                        onTaskUpdate(task.id, onTaskUpdatePayload);
+                      }}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent font-dm-sans text-sm"
+                    />
                   </div>
                 </div>
 
                 {/* Assigned To */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700 font-dm-sans">Assigned to</label>
-                  <div className="flex items-center space-x-2">
-                    {task.assigned_to && (
-                      <div className="w-6 h-6 rounded-full bg-orange-500 flex items-center justify-center">
-                        <span className="text-white text-xs font-medium">
-                          {teamMembers.find(m => m.id === task.assigned_to)?.full_name?.charAt(0) || 
-                           teamMembers.find(m => m.id === task.assigned_to)?.slack_username?.charAt(0) || '?'}
-                        </span>
-                      </div>
-                    )}
+                <div className="flex items-center py-1.5 hover:bg-gray-50 rounded-lg px-3 -mx-3 transition-colors">
+                  <div className="flex items-center space-x-3 w-32 flex-shrink-0">
+                    <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                    <span className="text-sm text-gray-600 font-dm-sans">Owner</span>
+                  </div>
+                  <div className="flex-1">
                     <select
                       value={task.assigned_to || ''}
                       onChange={(e) => {
@@ -410,7 +423,7 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
                         updateTask(task.id, updates);
                         onTaskUpdate(task.id, updates);
                       }}
-                      className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent font-dm-sans text-sm"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent font-dm-sans text-sm"
                     >
                       <option value="">Unassigned</option>
                       {teamMembers.map((member) => (
@@ -422,33 +435,55 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
                   </div>
                 </div>
 
-                {/* Due Date */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700 font-dm-sans">Due Date</label>
-                  <input
-                    type="date"
-                    value={task.due_date ? new Date(task.due_date).toISOString().split('T')[0] : ''}
-                    onChange={(e) => {
-                      const dateString = e.target.value || undefined;
-                      const updateTaskPayload = { due_date: dateString };
-                      const onTaskUpdatePayload = { due_date: dateString ? new Date(dateString) : undefined };
-                      updateTask(task.id, updateTaskPayload);
-                      onTaskUpdate(task.id, onTaskUpdatePayload);
-                    }}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent font-dm-sans text-sm"
-                  />
+                {/* Status */}
+                <div className="flex items-center py-1.5 hover:bg-gray-50 rounded-lg px-3 -mx-3 transition-colors">
+                  <div className="flex items-center space-x-3 w-32 flex-shrink-0">
+                    <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span className="text-sm text-gray-600 font-dm-sans">Status</span>
+                  </div>
+                  <div className="flex-1">
+                    {editingStatus ? (
+                      <select
+                        value={status}
+                        onChange={(e) => handleStatusChange(e.target.value as typeof task.status)}
+                        onBlur={() => setEditingStatus(false)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent font-dm-sans text-sm"
+                        autoFocus
+                      >
+                        <option value="backlog">Backlog</option>
+                        <option value="todo">To Do</option>
+                        <option value="in_progress">In Progress</option>
+                        <option value="review">In review</option>
+                        <option value="done">Done</option>
+                      </select>
+                    ) : (
+                      <span 
+                        className="inline-flex items-center px-0 py-1 text-sm text-gray-700 font-medium cursor-pointer hover:bg-gray-50 rounded-md transition-colors font-dm-sans"
+                        onClick={() => setEditingStatus(true)}
+                      >
+                        {status.replace('_', ' ')}
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 {/* Priority */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-700 font-dm-sans">Priority</label>
-                  <div className="flex items-center">
+                <div className="flex items-center py-1.5 hover:bg-gray-50 rounded-lg px-3 -mx-3 transition-colors">
+                  <div className="flex items-center space-x-3 w-32 flex-shrink-0">
+                    <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span className="text-sm text-gray-600 font-dm-sans">Priority</span>
+                  </div>
+                  <div className="flex-1">
                 {editingPriority ? (
                   <select
                     value={priority}
                     onChange={(e) => handlePriorityChange(e.target.value as typeof task.priority)}
                     onBlur={() => setEditingPriority(false)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent font-dm-sans text-sm"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent font-dm-sans text-sm"
                     autoFocus
                   >
                     <option value="low">Low</option>
@@ -458,12 +493,7 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
                   </select>
                 ) : (
                   <span 
-                        className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium cursor-pointer transition-colors font-dm-sans ${
-                          priority === 'urgent' ? 'bg-red-100 text-red-800' :
-                          priority === 'high' ? 'bg-orange-100 text-orange-800' :
-                          priority === 'medium' ? 'bg-yellow-100 text-yellow-800' :
-                          'bg-green-100 text-green-800'
-                        }`}
+                    className="inline-flex items-center px-0 py-1 text-sm text-gray-700 font-medium cursor-pointer hover:bg-gray-50 rounded-md transition-colors font-dm-sans"
                     onClick={() => setEditingPriority(true)}
                   >
                     {priority}
@@ -471,98 +501,21 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
                 )}
                   </div>
                 </div>
+
               </div>
 
-              {/* Project */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700 font-dm-sans">Project</label>
-                  <select
-                  value={task.project_id}
-                  onChange={(e) => {
-                    const updates = { project_id: e.target.value };
-                    updateTask(task.id, updates);
-                    onTaskUpdate(task.id, updates);
-                  }}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent font-dm-sans text-sm"
-                >
-                  {projects.map((project) => (
-                    <option key={project.id} value={project.id}>
-                      {project.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Description */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700 font-dm-sans">Description</label>
+              {/* Rich Text Editor - Notion Style */}
+              <div className="mt-6">
                 <NotionStyleEditor
                   content={description}
                   onChange={setDescription}
                   onBlur={handleDescriptionBlur}
-                  placeholder="Add a description..."
+                  placeholder="Write about your task here..."
                 />
-              </div>
-            </div>
-          )}
-          
-          {activeTab === 'comments' && (
-            <div className="space-y-6">
-              {/* Comment Input */}
-              <div className="border border-gray-300 rounded-lg p-4">
-                <textarea
-                  placeholder="Add a comment..."
-                  className="w-full border-0 resize-none focus:ring-0 font-dm-sans text-sm placeholder-gray-500"
-                  rows={3}
-                />
-                <div className="flex justify-end mt-3">
-                  <button className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium font-dm-sans hover:bg-blue-700 transition-colors">
-                    Submit
-                  </button>
-                </div>
-              </div>
-
-              {/* Sample Comments */}
-              <div className="space-y-4">
-                <div className="flex space-x-3">
-                  <div className="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center flex-shrink-0">
-                    <span className="text-white text-sm font-medium">A</span>
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-2 mb-1">
-                      <span className="font-medium text-gray-900 text-sm font-dm-sans">Alex Wright</span>
-                      <span className="text-gray-500 text-xs font-dm-sans">2h ago</span>
                     </div>
-                    <p className="text-gray-700 text-sm font-dm-sans">
-                      I'll start working on the research phase. Let me know if you have any specific requirements for the competitive analysis.
-                    </p>
-                    <div className="flex items-center space-x-4 mt-2">
-                      <button className="text-gray-500 hover:text-gray-700 text-xs font-dm-sans">Reply</button>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex space-x-3">
-                  <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center flex-shrink-0">
-                    <span className="text-white text-sm font-medium">O</span>
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-2 mb-1">
-                      <span className="font-medium text-gray-900 text-sm font-dm-sans">Omah Rahman</span>
-                      <span className="text-gray-500 text-xs font-dm-sans">6m ago</span>
-                    </div>
-                    <p className="text-gray-700 text-sm font-dm-sans">
-                      Sounds good to me. It's crucial for us to have a clear understanding of our competitors' offerings and market positioning.
-                    </p>
-                    <div className="flex items-center space-x-4 mt-2">
-                      <button className="text-gray-500 hover:text-gray-700 text-xs font-dm-sans">Reply</button>
-                    </div>
-                  </div>
-                </div>
-              </div>
                   </div>
                 )}
-
+          
           {activeTab === 'files' && (
             <div className="space-y-6">
               <h3 className="text-lg font-semibold text-gray-900 font-dm-sans">Files & Attachments</h3>
