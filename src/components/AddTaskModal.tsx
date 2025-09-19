@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Task, Project, TeamMember } from '../types';
+import MultiSelectUser from './MultiSelectUser';
 
 interface AddTaskModalProps {
   projects: Project[];
@@ -29,13 +30,11 @@ function AddTaskModal({ projects, teamMembers, onClose, onSubmit, defaultProject
   const [projectDropdownOpen, setProjectDropdownOpen] = useState(false);
   const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
   const [priorityDropdownOpen, setPriorityDropdownOpen] = useState(false);
-  const [assigneeDropdownOpen, setAssigneeDropdownOpen] = useState(false);
   
   // Refs for click outside handling
   const projectDropdownRef = useRef<HTMLDivElement>(null);
   const statusDropdownRef = useRef<HTMLDivElement>(null);
   const priorityDropdownRef = useRef<HTMLDivElement>(null);
-  const assigneeDropdownRef = useRef<HTMLDivElement>(null);
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -48,9 +47,6 @@ function AddTaskModal({ projects, teamMembers, onClose, onSubmit, defaultProject
       }
       if (priorityDropdownRef.current && !priorityDropdownRef.current.contains(event.target as Node)) {
         setPriorityDropdownOpen(false);
-      }
-      if (assigneeDropdownRef.current && !assigneeDropdownRef.current.contains(event.target as Node)) {
-        setAssigneeDropdownOpen(false);
       }
     };
 
@@ -67,7 +63,8 @@ function AddTaskModal({ projects, teamMembers, onClose, onSubmit, defaultProject
       title: formData.title,
       description: formData.description || undefined,
       project_id: formData.project_id || undefined,
-      assigned_to: assignedMembers.length > 0 ? assignedMembers[0] : (formData.assigned_to || undefined), // For now, use first assignee
+      assigned_to: assignedMembers.length > 0 ? assignedMembers[0] : undefined, // Main assignee for backward compatibility
+      assignees: assignedMembers, // Multiple assignees
       status: formData.status,
       priority: formData.priority,
       due_date: formData.due_date ? new Date(formData.due_date) : undefined,
@@ -82,20 +79,6 @@ function AddTaskModal({ projects, teamMembers, onClose, onSubmit, defaultProject
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  // Handle multiple assignee selection
-  const toggleAssignee = (memberId: string) => {
-    setAssignedMembers(prev => {
-      if (prev.includes(memberId)) {
-        return prev.filter(id => id !== memberId);
-      } else {
-        return [...prev, memberId];
-      }
-    });
-  };
-
-  const removeAssignee = (memberId: string) => {
-    setAssignedMembers(prev => prev.filter(id => id !== memberId));
-  };
 
   // Get display names for dropdowns
   const getProjectDisplayName = (projectId: string) => {
@@ -230,69 +213,12 @@ function AddTaskModal({ projects, teamMembers, onClose, onSubmit, defaultProject
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Assignees
               </label>
-              <div className="relative" ref={assigneeDropdownRef}>
-                <button
-                  type="button"
-                  onClick={() => setAssigneeDropdownOpen(!assigneeDropdownOpen)}
-                  className="w-full px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 font-dm-sans border border-neutral-200 bg-white text-neutral-800 hover:border-neutral-300 hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent text-left flex items-center justify-between"
-                >
-                  <span className={assignedMembers.length > 0 ? 'text-neutral-900' : 'text-neutral-500'}>
-                    {assignedMembers.length > 0 
-                      ? `${assignedMembers.length} assignee${assignedMembers.length > 1 ? 's' : ''} selected`
-                      : 'Select assignees...'
-                    }
-                  </span>
-                  <svg className={`w-4 h-4 transition-transform ${assigneeDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
-                
-                {assigneeDropdownOpen && (
-                  <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-neutral-200 rounded-lg shadow-lg z-10 max-h-48 overflow-y-auto">
-                    {teamMembers.map(member => (
-                      <button
-                        key={member.id}
-                        type="button"
-                        onClick={() => toggleAssignee(member.id)}
-                        className="w-full px-3 py-2 text-left text-sm text-neutral-900 hover:bg-neutral-50 font-dm-sans flex items-center justify-between"
-                      >
-                        <span>{member.full_name || member.slack_username}</span>
-                        {assignedMembers.includes(member.id) && (
-                          <svg className="w-4 h-4 text-accent-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                          </svg>
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-              
-              {/* Selected assignees display */}
-              {assignedMembers.length > 0 && (
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {assignedMembers.map(memberId => {
-                    const member = teamMembers.find(m => m.id === memberId);
-                    return member ? (
-                      <span
-                        key={memberId}
-                        className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-accent-100 text-accent-800 font-dm-sans"
-                      >
-                        {member.full_name || member.slack_username}
-                        <button
-                          type="button"
-                          onClick={() => removeAssignee(memberId)}
-                          className="ml-1 text-accent-600 hover:text-accent-800"
-                        >
-                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                        </button>
-                      </span>
-                    ) : null;
-                  })}
-                </div>
-              )}
+              <MultiSelectUser
+                teamMembers={teamMembers}
+                selectedUserIds={assignedMembers}
+                onSelectionChange={setAssignedMembers}
+                placeholder="Select as many as you like"
+              />
             </div>
           </div>
 

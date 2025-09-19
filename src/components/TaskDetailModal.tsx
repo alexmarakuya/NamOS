@@ -4,6 +4,7 @@ import { Task, Project, TeamMember } from '../types';
 import { useTaskOperations, useTimeEntries } from '../hooks/useSupabase';
 import { supabase } from '../lib/supabase';
 import NotionStyleEditor from './NotionStyleEditor';
+import MultiSelectUser from './MultiSelectUser';
 
 interface TaskDetailModalProps {
   task: Task;
@@ -31,6 +32,15 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
   const [description, setDescription] = useState(task.description || '');
   const [status, setStatus] = useState(task.status);
   const [priority, setPriority] = useState(task.priority);
+  const [assignedUserIds, setAssignedUserIds] = useState<string[]>(() => {
+    // Initialize with current assignees or fallback to single assigned_to
+    if (task.assignees && task.assignees.length > 0) {
+      return task.assignees;
+    } else if (task.assigned_to) {
+      return [task.assigned_to];
+    }
+    return [];
+  });
   const [showTimeLog, setShowTimeLog] = useState(false);
   const [timeLogHours, setTimeLogHours] = useState('');
   const [timeLogDescription, setTimeLogDescription] = useState('');
@@ -126,6 +136,34 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
       setEditingPriority(false);
     }
   }, [task, updateTask, onTaskUpdate]);
+
+  const handleAssigneesChange = useCallback(async (newAssigneeIds: string[]) => {
+    setAssignedUserIds(newAssigneeIds);
+    setSaving(prev => ({ ...prev, assignees: true }));
+    
+    try {
+      const updates = {
+        assignees: newAssigneeIds,
+        assigned_to: newAssigneeIds.length > 0 ? newAssigneeIds[0] : undefined // Keep backward compatibility
+      };
+      await updateTask(task.id, updates);
+      onTaskUpdate(task.id, updates);
+      setErrors(prev => ({ ...prev, assignees: '' }));
+    } catch (error) {
+      console.error('Failed to update assignees:', error);
+      setErrors(prev => ({ ...prev, assignees: 'Failed to update assignees' }));
+      // Revert on error
+      if (task.assignees && task.assignees.length > 0) {
+        setAssignedUserIds(task.assignees);
+      } else if (task.assigned_to) {
+        setAssignedUserIds([task.assigned_to]);
+      } else {
+        setAssignedUserIds([]);
+      }
+    } finally {
+      setSaving(prev => ({ ...prev, assignees: false }));
+    }
+  }, [task.id, task.assignees, task.assigned_to, updateTask, onTaskUpdate]);
 
   const handleTimeLog = async () => {
     if (!timeLogHours || parseFloat(timeLogHours) <= 0) {
@@ -413,25 +451,21 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
                     <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                     </svg>
-                    <span className="text-sm text-gray-600 font-dm-sans">Owner</span>
+                    <span className="text-sm text-gray-600 font-dm-sans">Assignees</span>
                   </div>
                   <div className="flex-1">
-                    <select
-                      value={task.assigned_to || ''}
-                      onChange={(e) => {
-                        const updates = { assigned_to: e.target.value || undefined };
-                        updateTask(task.id, updates);
-                        onTaskUpdate(task.id, updates);
-                      }}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent font-dm-sans text-sm"
-                    >
-                      <option value="">Unassigned</option>
-                      {teamMembers.map((member) => (
-                        <option key={member.id} value={member.id}>
-                          {member.full_name || member.slack_username}
-                        </option>
-                      ))}
-                    </select>
+                    <MultiSelectUser
+                      teamMembers={teamMembers}
+                      selectedUserIds={assignedUserIds}
+                      onSelectionChange={handleAssigneesChange}
+                      placeholder="Select as many as you like"
+                    />
+                    {errors.assignees && (
+                      <p className="text-red-500 text-xs mt-1 font-dm-sans">{errors.assignees}</p>
+                    )}
+                    {saving.assignees && (
+                      <p className="text-gray-500 text-xs mt-1 font-dm-sans">Saving...</p>
+                    )}
                   </div>
                 </div>
 
