@@ -1,12 +1,30 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { useAuth } from '../contexts/AuthContext';
 
 interface LeftNavProps {
-  activeApp: 'financial' | 'timesheet' | 'projects' | 'tasks' | 'clients';
-  onAppChange: (app: 'financial' | 'timesheet' | 'projects' | 'tasks' | 'clients') => void;
+  activeApp: 'financial' | 'timesheet' | 'projects' | 'tasks' | 'clients' | 'users';
+  onAppChange: (app: 'financial' | 'timesheet' | 'projects' | 'tasks' | 'clients' | 'users') => void;
 }
 
 const LeftNav: React.FC<LeftNavProps> = ({ activeApp, onAppChange }) => {
   // Always keep compact - no expansion
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const settingsRef = useRef<HTMLDivElement>(null);
+  const { user, logout } = useAuth();
+
+  // Close settings dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (settingsRef.current && !settingsRef.current.contains(event.target as Node)) {
+        setIsSettingsOpen(false);
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   const navItems = [
     {
@@ -120,28 +138,101 @@ const LeftNav: React.FC<LeftNavProps> = ({ activeApp, onAppChange }) => {
         {/* User Avatar */}
         <button className="w-12 h-12 rounded-full flex items-center justify-center bg-slate-100 hover:bg-slate-200 transition-all duration-200 relative group">
           <div className="w-8 h-8 rounded-full bg-slate-600 flex items-center justify-center">
-            <span className="text-white font-medium text-sm">MJ</span>
+            <span className="text-white font-medium text-sm">
+              {user?.full_name ? user.full_name.charAt(0).toUpperCase() : user?.slack_username?.charAt(0).toUpperCase() || 'U'}
+            </span>
           </div>
           
           {/* Tooltip */}
           <div className="absolute left-14 top-1/2 transform -translate-y-1/2 bg-white/90 backdrop-blur-sm text-gray-800 px-3 py-2 rounded-full text-sm opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none whitespace-nowrap z-50 border border-gray-200/50 shadow-sm">
-            Profile
+            {user?.full_name || user?.slack_username || 'User'}
           </div>
         </button>
         
-        {/* Help */}
-        <button className="w-12 h-12 rounded-full flex items-center justify-center text-slate-800 hover:bg-gray-100 hover:text-slate-800 transition-all duration-200 relative group">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="10"></circle>
-            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
-            <line x1="12" y1="17" x2="12.01" y2="17"></line>
-          </svg>
-          
-          {/* Tooltip */}
-          <div className="absolute left-14 top-1/2 transform -translate-y-1/2 bg-white/90 backdrop-blur-sm text-gray-800 px-3 py-2 rounded-full text-sm opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none whitespace-nowrap z-50 border border-gray-200/50 shadow-sm">
-            Help
-          </div>
-        </button>
+        {/* Settings */}
+        <div className="relative" ref={settingsRef}>
+          <button 
+            onClick={() => setIsSettingsOpen(!isSettingsOpen)}
+            className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-200 relative group ${
+              isSettingsOpen ? 'bg-gray-100 text-slate-800' : 'text-slate-800 hover:bg-gray-100 hover:text-slate-800'
+            }`}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path>
+              <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+            
+            {/* Tooltip */}
+            {!isSettingsOpen && (
+              <div className="absolute left-14 top-1/2 transform -translate-y-1/2 bg-white/90 backdrop-blur-sm text-gray-800 px-3 py-2 rounded-full text-sm opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none whitespace-nowrap z-50 border border-gray-200/50 shadow-sm">
+                Settings
+              </div>
+            )}
+          </button>
+
+          {/* Settings Dropdown */}
+          {isSettingsOpen && (
+            <div className="absolute left-14 bottom-0 bg-white/95 backdrop-blur-sm border border-gray-200/50 rounded-lg shadow-lg py-2 min-w-[180px] z-50">
+              <button
+                onClick={() => {
+                  onAppChange('users');
+                  setIsSettingsOpen(false);
+                }}
+                className="flex items-center w-full px-4 py-2 text-sm text-slate-800 hover:bg-gray-100 transition-colors font-dm-sans whitespace-nowrap"
+              >
+                <svg className="w-4 h-4 mr-3 text-slate-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+                User Management
+              </button>
+              <a
+                href="http://localhost:6006"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center px-4 py-2 text-sm text-slate-800 hover:bg-gray-100 transition-colors font-dm-sans whitespace-nowrap"
+                onClick={() => setIsSettingsOpen(false)}
+              >
+                <svg className="w-4 h-4 mr-3 text-slate-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                </svg>
+                Storybook
+              </a>
+              <button
+                className="flex items-center w-full px-4 py-2 text-sm text-slate-800 hover:bg-gray-100 transition-colors font-dm-sans whitespace-nowrap"
+                onClick={() => setIsSettingsOpen(false)}
+              >
+                <svg className="w-4 h-4 mr-3 text-slate-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                  <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                </svg>
+                Help
+              </button>
+              <button
+                className="flex items-center w-full px-4 py-2 text-sm text-slate-800 hover:bg-gray-100 transition-colors font-dm-sans whitespace-nowrap"
+                onClick={() => setIsSettingsOpen(false)}
+              >
+                <svg className="w-4 h-4 mr-3 text-slate-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                Preferences
+              </button>
+              <button
+                onClick={() => {
+                  logout();
+                  setIsSettingsOpen(false);
+                }}
+                className="flex items-center w-full px-4 py-2 text-sm text-slate-800 hover:bg-gray-100 transition-colors font-dm-sans whitespace-nowrap"
+              >
+                <svg className="w-4 h-4 mr-3 text-slate-800" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+                Sign Out
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

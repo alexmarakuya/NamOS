@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useClientsWithStatus, useClientOperations } from '../hooks/useSupabase';
+import ClientDetailModal from './ClientDetailModal';
 
 interface ClientsPageProps {
   activeStatFilter?: string | null;
@@ -9,6 +10,10 @@ const ClientsPage: React.FC<ClientsPageProps> = ({ activeStatFilter }) => {
   const { clients, loading, refetch } = useClientsWithStatus();
   const { updateClientStatus } = useClientOperations();
   const [draggedClient, setDraggedClient] = useState<any>(null);
+  const [selectedClient, setSelectedClient] = useState<any>(null);
+  const [isClientDetailModalOpen, setIsClientDetailModalOpen] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const [draggedOverColumn, setDraggedOverColumn] = useState<string | null>(null);
 
 
   // Generate client avatar (initials or logo)
@@ -36,12 +41,41 @@ const ClientsPage: React.FC<ClientsPageProps> = ({ activeStatFilter }) => {
   // Drag and drop handlers
   const handleDragStart = (e: React.DragEvent, client: any) => {
     setDraggedClient(client);
+    setIsDragging(true);
     e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', client.id || client.name);
+    
+    // Add some visual feedback
+    setTimeout(() => {
+      const dragImage = e.target as HTMLElement;
+      if (dragImage) {
+        dragImage.style.opacity = '0.5';
+      }
+    }, 0);
   };
 
-  const handleDragOver = (e: React.DragEvent) => {
+  const handleDragEnd = (e: React.DragEvent) => {
+    setIsDragging(false);
+    setDraggedClient(null);
+    
+    // Reset visual feedback
+    const dragImage = e.target as HTMLElement;
+    if (dragImage) {
+      dragImage.style.opacity = '1';
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent, columnId: string) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
+    setDraggedOverColumn(columnId);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    // Only clear if we're leaving the column entirely
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+      setDraggedOverColumn(null);
+    }
   };
 
   const handleDrop = (e: React.DragEvent, newStatus: string) => {
@@ -51,24 +85,30 @@ const ClientsPage: React.FC<ClientsPageProps> = ({ activeStatFilter }) => {
       handleUpdateClientStatus(draggedClient.name, newStatus);
     }
     setDraggedClient(null);
+    setIsDragging(false);
+    setDraggedOverColumn(null);
   };
 
   const handleUpdateClientStatus = async (clientName: string, newStatus: string) => {
-    const success = await updateClientStatus(clientName, newStatus);
-    if (success) {
-      // Refetch clients to update the UI
-      refetch();
+    try {
+      const success = await updateClientStatus(clientName, newStatus);
+      if (success) {
+        // Refetch clients to update the UI
+        refetch();
+      }
+    } catch (error) {
+      console.error('Error updating client status:', error);
     }
   };
 
-  // Filter clients based on activeStatFilter
-  const filteredClients = React.useMemo(() => {
-    if (!activeStatFilter) return clients;
+  // Filter clients based on activeStatFilter - used within column grouping
+  const getFilteredClients = React.useCallback((clientsToFilter: any[]) => {
+    if (!activeStatFilter || activeStatFilter === 'all') {
+      return clientsToFilter;
+    }
     
-    return clients.filter(client => {
+    return clientsToFilter.filter(client => {
       switch (activeStatFilter) {
-        case 'all':
-          return true;
         case 'my':
           // Clients created by or assigned to current user (placeholder logic)
           // TODO: Update when user assignment fields are added to Client interface
@@ -83,9 +123,9 @@ const ClientsPage: React.FC<ClientsPageProps> = ({ activeStatFilter }) => {
           return client.status === activeStatFilter;
       }
     });
-  }, [clients, activeStatFilter]);
+  }, [activeStatFilter]);
 
-  // Group clients by status for Kanban
+  // Group ALL clients by status for Kanban - always show all columns
   const clientColumns = React.useMemo(() => {
     const columns = [
       { id: 'leads', title: 'Leads', clients: [] as any[], color: '#3B82F6' },
@@ -95,7 +135,8 @@ const ClientsPage: React.FC<ClientsPageProps> = ({ activeStatFilter }) => {
       { id: 'off-boarded', title: 'Off-Boarded', clients: [] as any[], color: '#6B7280' }
     ];
 
-    filteredClients.forEach(client => {
+    // First, populate all columns with all clients
+    clients.forEach(client => {
       const column = columns.find(col => col.id === client.status);
       if (column) {
         column.clients.push(client);
@@ -105,8 +146,13 @@ const ClientsPage: React.FC<ClientsPageProps> = ({ activeStatFilter }) => {
       }
     });
 
+    // Then apply filtering to each column
+    columns.forEach(column => {
+      column.clients = getFilteredClients(column.clients);
+    });
+
     return columns;
-  }, [filteredClients]);
+  }, [clients, getFilteredClients]);
 
   // Show loading state
   if (loading) {
@@ -124,9 +170,17 @@ const ClientsPage: React.FC<ClientsPageProps> = ({ activeStatFilter }) => {
       <div className="dashboard-card">
         <div className="flex gap-3 overflow-x-auto scrollbar-hide min-h-[500px]">
           {clientColumns.map((column) => (
-            <div key={column.id} className="flex flex-col rounded-2xl p-4 min-w-[280px] w-[280px] flex-shrink-0 min-h-[800px]" style={{ 
-              background: 'linear-gradient(to bottom, #F8F8F8 0%, #FFFFFF 100%)'
-            }}>
+            <div 
+              key={column.id} 
+              className={`flex flex-col rounded-2xl p-3 min-w-[280px] w-[280px] flex-shrink-0 min-h-[800px] transition-all ${
+                draggedOverColumn === column.id ? 'border-2 border-orange-300 bg-orange-50' : ''
+              }`}
+              style={{ 
+                background: draggedOverColumn === column.id 
+                  ? 'linear-gradient(to bottom, #FFF7ED 0%, #FFFFFF 100%)'
+                  : 'linear-gradient(to bottom, #F8F8F8 0%, #FFFFFF 100%)'
+              }}
+            >
               {/* Column Header */}
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center space-x-2">
@@ -146,7 +200,8 @@ const ClientsPage: React.FC<ClientsPageProps> = ({ activeStatFilter }) => {
               {/* Clients */}
               <div 
                 className="space-y-3 flex-1 overflow-y-auto"
-                onDragOver={handleDragOver}
+                onDragOver={(e) => handleDragOver(e, column.id)}
+                onDragLeave={handleDragLeave}
                 onDrop={(e) => handleDrop(e, column.id)}
               >
                 {column.clients.map((client) => (
@@ -154,12 +209,22 @@ const ClientsPage: React.FC<ClientsPageProps> = ({ activeStatFilter }) => {
                     key={client.name}
                     draggable
                     onDragStart={(e) => handleDragStart(e, client)}
-                    className="bg-white rounded-lg p-4 border border-gray-200 hover:shadow-sm transition-shadow cursor-move"
+                    onDragEnd={handleDragEnd}
+                    onClick={(e) => {
+                      // Prevent click if we just finished dragging
+                      if (!isDragging) {
+                        setSelectedClient(client);
+                        setIsClientDetailModalOpen(true);
+                      }
+                    }}
+                    className={`bg-white rounded-xl p-4 shadow-sm border border-gray-200 hover:shadow-md hover:border-gray-300 transition-all cursor-pointer ${
+                      draggedClient?.name === client.name ? 'opacity-50 scale-95' : ''
+                    }`}
                   >
                     <div className="space-y-3">
                       {/* Client Avatar and Name */}
                       <div className="flex items-center space-x-3">
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold font-dm-sans ${getAvatarColor(client.name)}`}>
+                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-white text-sm font-bold font-dm-sans ${getAvatarColor(client.name)}`}>
                           {getClientAvatar(client.name)}
                         </div>
                         <div className="flex-1 min-w-0">
@@ -196,6 +261,28 @@ const ClientsPage: React.FC<ClientsPageProps> = ({ activeStatFilter }) => {
           ))}
         </div>
       </div>
+
+      {/* Client Detail Modal */}
+      {selectedClient && isClientDetailModalOpen && (
+        <ClientDetailModal
+          client={selectedClient}
+          isOpen={isClientDetailModalOpen}
+          onClose={() => {
+            setSelectedClient(null);
+            setIsClientDetailModalOpen(false);
+          }}
+          onClientUpdate={(clientId, updates) => {
+            // Handle client update
+            console.log('Client updated:', clientId, updates);
+            refetch();
+          }}
+          onClientDelete={(clientId) => {
+            // Handle client delete
+            console.log('Client deleted:', clientId);
+            refetch();
+          }}
+        />
+      )}
     </>
   );
 };

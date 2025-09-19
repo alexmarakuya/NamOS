@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { Project, TeamMember } from '../types';
 
 interface ProjectsPageProps {
@@ -7,6 +7,7 @@ interface ProjectsPageProps {
   activeStatFilter?: string | null;
   groupBy?: 'client' | 'status';
   onProjectSelect?: (projectId: string) => void;
+  onProjectUpdate?: (projectId: string, updates: Partial<Project>) => void;
 }
 
 type ProjectStatus = 'all' | 'active' | 'upcoming' | 'completed' | 'on_hold';
@@ -16,29 +17,29 @@ const ProjectsPage: React.FC<ProjectsPageProps> = ({
   teamMembers, 
   activeStatFilter,
   groupBy = 'client',
-  onProjectSelect 
+  onProjectSelect,
+  onProjectUpdate
 }) => {
   // TODO: Replace with actual user ID from auth context when implemented
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [statusFilter, setStatusFilter] = useState<ProjectStatus>('all');
+  const [draggedProject, setDraggedProject] = useState<Project | null>(null);
+  const [draggedOverColumn, setDraggedOverColumn] = useState<string | null>(null);
 
-  // Filter projects by stat filter only
-  const filteredProjects = useMemo(() => {
-    let filtered = projects;
+  // Filter projects based on activeStatFilter - used within column grouping
+  const getFilteredProjects = useCallback((projectsToFilter: Project[]) => {
+    if (!activeStatFilter || activeStatFilter === 'all') {
+      return projectsToFilter;
+    }
     
-    // Apply stat filter if active
-    if (activeStatFilter) {
-      filtered = projects.filter(project => {
+    return projectsToFilter.filter(project => {
         const projectStatus = project.status || (project.is_active ? 'active' : 'completed');
         
         switch (activeStatFilter) {
-          case 'all':
-            // All projects except completed
-            return projectStatus !== 'completed';
-          case 'my':
-            // Projects created by or assigned to current user (placeholder logic)
-            // TODO: Update when user assignment fields are added to Project interface
-            return (projectStatus !== 'completed') && (project.name.toLowerCase().includes('my') || project.description?.toLowerCase().includes('my'));
+        case 'my':
+          // Projects created by or assigned to current user (placeholder logic)
+          // TODO: Update when user assignment fields are added to Project interface
+          return project.name.toLowerCase().includes('my') || project.description?.toLowerCase().includes('my');
           case 'overdue':
             // Projects with deadlines in the past
             return project.deadline && new Date(project.deadline) < new Date();
@@ -59,33 +60,110 @@ const ProjectsPage: React.FC<ProjectsPageProps> = ({
             return projectStatus === activeStatFilter;
         }
       });
+  }, [activeStatFilter]);
+
+  // Drag and drop handlers
+  const handleDragStart = (e: React.DragEvent, project: Project) => {
+    setDraggedProject(project);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', project.id);
+  };
+
+  const handleDragOver = (e: React.DragEvent, columnKey: string) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setDraggedOverColumn(columnKey);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    // Only clear if we're leaving the column entirely
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+      setDraggedOverColumn(null);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent, columnKey: string) => {
+    e.preventDefault();
+    setDraggedOverColumn(null);
+    
+    if (draggedProject && onProjectUpdate) {
+      const updates: Partial<Project> = {};
+      
+      if (groupBy === 'status') {
+        // Update project status
+        updates.status = columnKey as Project['status'];
+      } else if (groupBy === 'client') {
+        // Update project client - this would need client mapping logic
+        // For now, we'll just show a message
+        console.log(`Moving project ${draggedProject.name} to client column: ${columnKey}`);
+        return;
+      }
+      
+      if (Object.keys(updates).length > 0) {
+        onProjectUpdate(draggedProject.id, updates);
+      }
     }
     
-    return filtered;
-  }, [projects, activeStatFilter]);
+    setDraggedProject(null);
+  };
 
-  // Group projects by client or status
+  const handleDragEnd = () => {
+    setDraggedProject(null);
+    setDraggedOverColumn(null);
+  };
+
+  // Group ALL projects by client or status, then apply filtering within each group
   const groupedProjects = useMemo(() => {
     if (groupBy === 'status') {
-      // Group by status
-      const groups: { [key: string]: Project[] } = {};
-      filteredProjects.forEach(project => {
+      // Group by status - always show all status columns
+      const groups: { [key: string]: Project[] } = {
+        'active': [],
+        'upcoming': [],
+        'on_hold': [],
+        'completed': []
+      };
+      
+      projects.forEach(project => {
         const status = project.status || (project.is_active ? 'active' : 'completed');
-        if (!groups[status]) groups[status] = [];
-        groups[status].push(project);
+        if (groups[status]) {
+          groups[status].push(project);
+        }
       });
+      
+      // Apply filtering to each group
+      Object.keys(groups).forEach(status => {
+        groups[status] = getFilteredProjects(groups[status]);
+      });
+      
       return groups;
     } else {
-      // Group by client
-      const groups: { [key: string]: Project[] } = {};
-      filteredProjects.forEach(project => {
+      // Group by client - collect all unique clients first
+      const allClients = new Set<string>();
+      projects.forEach(project => {
         const client = project.client_name || 'No Client';
-        if (!groups[client]) groups[client] = [];
+        allClients.add(client);
+      });
+      
+      // Initialize groups for all clients
+      const groups: { [key: string]: Project[] } = {};
+      allClients.forEach(client => {
+        groups[client] = [];
+      });
+      
+      // Populate groups with all projects
+      projects.forEach(project => {
+        const client = project.client_name || 'No Client';
         groups[client].push(project);
       });
+      
+      // Apply filtering to each group
+      Object.keys(groups).forEach(client => {
+        groups[client] = getFilteredProjects(groups[client]);
+      });
+      
       return groups;
     }
-  }, [filteredProjects, groupBy]);
+  }, [projects, groupBy, getFilteredProjects]);
 
   return (
     <div className="h-full">
@@ -102,9 +180,20 @@ const ProjectsPage: React.FC<ProjectsPageProps> = ({
             const columnProjects = groupedProjects[column.key] || [];
 
               return (
-              <div key={column.key} className="flex flex-col rounded-2xl p-4 min-w-[280px] w-[280px] flex-shrink-0 min-h-[800px]" style={{ 
-                background: 'linear-gradient(to bottom, #F8F8F8 0%, #FFFFFF 100%)'
-              }}>
+              <div 
+                key={column.key} 
+                className={`flex flex-col rounded-2xl p-3 min-w-[280px] w-[280px] flex-shrink-0 min-h-[800px] transition-all ${
+                  draggedOverColumn === column.key ? 'border-2 border-orange-300 bg-orange-50' : ''
+                }`}
+                style={{ 
+                  background: draggedOverColumn === column.key 
+                    ? 'linear-gradient(to bottom, #FFF7ED 0%, #FFFFFF 100%)'
+                    : 'linear-gradient(to bottom, #F8F8F8 0%, #FFFFFF 100%)'
+                }}
+                onDragOver={(e) => handleDragOver(e, column.key)}
+                onDragLeave={handleDragLeave}
+                onDrop={(e) => handleDrop(e, column.key)}
+              >
                   {/* Column Header */}
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center space-x-2">
@@ -124,7 +213,12 @@ const ProjectsPage: React.FC<ProjectsPageProps> = ({
                   {columnProjects.map(project => (
                         <div
                           key={project.id}
-                      className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 hover:shadow-lg hover:border-gray-300 transition-all cursor-pointer"
+                          draggable
+                          onDragStart={(e) => handleDragStart(e, project)}
+                          onDragEnd={handleDragEnd}
+                      className={`bg-white rounded-xl p-4 shadow-sm border border-gray-200 hover:shadow-md hover:border-gray-300 transition-all cursor-pointer ${
+                        draggedProject?.id === project.id ? 'opacity-50 scale-95' : ''
+                      }`}
                       onClick={() => onProjectSelect?.(project.id)}
                         >
                           {/* Project Header */}
@@ -229,7 +323,7 @@ const ProjectsPage: React.FC<ProjectsPageProps> = ({
               const colorIndex = Object.keys(groupedProjects).indexOf(clientName) % colors.length;
               
               return (
-              <div key={clientName} className="flex flex-col rounded-2xl p-4 min-w-[280px] w-[280px] flex-shrink-0 min-h-[800px]" style={{ 
+              <div key={clientName} className="flex flex-col rounded-2xl p-3 min-w-[280px] w-[280px] flex-shrink-0 min-h-[800px]" style={{ 
                 background: 'linear-gradient(to bottom, #F8F8F8 0%, #FFFFFF 100%)'
               }}>
                   {/* Column Header */}
@@ -251,7 +345,7 @@ const ProjectsPage: React.FC<ProjectsPageProps> = ({
                   {clientProjects.map(project => (
                         <div
                           key={project.id}
-                      className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 hover:shadow-lg hover:border-gray-300 transition-all cursor-pointer"
+                      className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 hover:shadow-md hover:border-gray-300 transition-all cursor-pointer"
                       onClick={() => onProjectSelect?.(project.id)}
                         >
                           {/* Project Header */}
@@ -325,7 +419,7 @@ const ProjectsPage: React.FC<ProjectsPageProps> = ({
                           >
                             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                            </svg>
+                                </svg>
                               </div>
                             )}
                           </div>
@@ -380,7 +474,12 @@ const ProjectsPage: React.FC<ProjectsPageProps> = ({
                   {columnProjects.map(project => (
                         <div
                           key={project.id}
-                      className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 hover:shadow-lg hover:border-gray-300 transition-all cursor-pointer"
+                          draggable
+                          onDragStart={(e) => handleDragStart(e, project)}
+                          onDragEnd={handleDragEnd}
+                      className={`bg-white rounded-xl p-4 shadow-sm border border-gray-200 hover:shadow-md hover:border-gray-300 transition-all cursor-pointer ${
+                        draggedProject?.id === project.id ? 'opacity-50 scale-95' : ''
+                      }`}
                       onClick={() => onProjectSelect?.(project.id)}
                         >
                           {/* Project Header */}
@@ -507,7 +606,7 @@ const ProjectsPage: React.FC<ProjectsPageProps> = ({
                   {clientProjects.map(project => (
                         <div
                           key={project.id}
-                      className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 hover:shadow-lg hover:border-gray-300 transition-all cursor-pointer"
+                      className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 hover:shadow-md hover:border-gray-300 transition-all cursor-pointer"
                       onClick={() => onProjectSelect?.(project.id)}
                         >
                           {/* Project Header */}

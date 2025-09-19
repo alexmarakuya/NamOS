@@ -10,6 +10,11 @@ interface KanbanBoardProps {
   onTimeLog?: (taskId: string) => void;
   onAddTask?: (status: Task['status']) => void;
   isProjectDetail?: boolean;
+  // Filter props - when provided, only matching tasks will be shown (but all columns remain visible)
+  activeStatFilter?: string | null;
+  selectedAssignee?: string;
+  selectedProject?: string;
+  currentUserId?: string;
 }
 
 const COLUMNS: Omit<TaskColumn, 'tasks'>[] = [
@@ -20,7 +25,20 @@ const COLUMNS: Omit<TaskColumn, 'tasks'>[] = [
   { id: 'done', title: 'Done', status: 'done', color: '#10B981' }
 ];
 
-function KanbanBoard({ tasks, projects, teamMembers, onTaskUpdate, onTaskClick, onTimeLog, onAddTask, isProjectDetail = false }: KanbanBoardProps) {
+function KanbanBoard({ 
+  tasks, 
+  projects, 
+  teamMembers, 
+  onTaskUpdate, 
+  onTaskClick, 
+  onTimeLog, 
+  onAddTask, 
+  isProjectDetail = false,
+  activeStatFilter,
+  selectedAssignee,
+  selectedProject,
+  currentUserId
+}: KanbanBoardProps) {
   const [draggedTask, setDraggedTask] = useState<Task | null>(null);
   const [draggedOverColumn, setDraggedOverColumn] = useState<string | null>(null);
   const [dropIndicator, setDropIndicator] = useState<{
@@ -28,13 +46,45 @@ function KanbanBoard({ tasks, projects, teamMembers, onTaskUpdate, onTaskClick, 
     position: number; // -1 for before all tasks, 0+ for after task at index
   } | null>(null);
 
-  // Group tasks by status
+  // Filter tasks based on provided filters
+  const filteredTasks = useMemo(() => {
+    return tasks.filter(task => {
+      // Apply stat filter if active
+      let matchesStatFilter = true;
+      if (activeStatFilter && activeStatFilter !== 'all') {
+        switch (activeStatFilter) {
+          case 'my':
+            // Tasks assigned to or created by current user
+            matchesStatFilter = task.assigned_to === currentUserId || task.created_by === currentUserId;
+            break;
+          case 'overdue':
+            matchesStatFilter = !!(task.due_date && new Date(task.due_date) < new Date());
+            break;
+          case 'completed':
+            matchesStatFilter = task.status === 'done';
+            break;
+          default:
+            matchesStatFilter = true;
+        }
+      }
+      
+      // Apply assignee filter
+      const assigneeMatch = !selectedAssignee || selectedAssignee === 'all' || task.assigned_to === selectedAssignee;
+      
+      // Apply project filter (for project detail view)
+      const projectMatch = !selectedProject || selectedProject === 'all' || task.project_id === selectedProject;
+      
+      return matchesStatFilter && assigneeMatch && projectMatch;
+    });
+  }, [tasks, activeStatFilter, selectedAssignee, selectedProject, currentUserId]);
+
+  // Group filtered tasks by status - ALL columns are always shown
   const columns = useMemo((): TaskColumn[] => {
     return COLUMNS.map(column => ({
       ...column,
-      tasks: tasks.filter(task => task.status === column.status)
+      tasks: filteredTasks.filter(task => task.status === column.status)
     }));
-  }, [tasks]);
+  }, [filteredTasks]);
 
   const getPriorityColor = (priority: Task['priority']) => {
     switch (priority) {
@@ -163,7 +213,7 @@ function KanbanBoard({ tasks, projects, teamMembers, onTaskUpdate, onTaskClick, 
       <div className="hidden lg:flex lg:gap-3 h-full overflow-x-auto scrollbar-hide">
         {columns.map(column => {
           return (
-            <div key={column.id} className="flex flex-col rounded-2xl p-4 min-w-[280px] w-[280px] flex-shrink-0 min-h-[800px]" style={{ 
+            <div key={column.id} className="flex flex-col rounded-2xl p-3 min-w-[280px] w-[280px] flex-shrink-0 min-h-[800px]" style={{ 
               background: isProjectDetail 
                 ? 'linear-gradient(to bottom, #FFFFFF 0%, #F8F8F8 100%)'
                 : 'linear-gradient(to bottom, #F8F8F8 0%, #FFFFFF 100%)'
@@ -195,8 +245,8 @@ function KanbanBoard({ tasks, projects, teamMembers, onTaskUpdate, onTaskClick, 
 
           {/* Tasks */}
           <div 
-            className={`space-y-3 flex-1 overflow-y-auto ${
-              draggedOverColumn === column.id ? 'bg-neutral-50 border-2 border-neutral-800 border-dashed shadow-inner rounded-xl' : ''
+            className={`space-y-3 flex-1 overflow-y-auto transition-all ${
+              draggedOverColumn === column.id ? 'border-2 border-orange-300 bg-orange-50 rounded-xl' : ''
             }`}
             onDragOver={(e) => handleDragOver(e, column.id, column.tasks)}
             onDragEnter={(e) => handleDragEnter(e, column.id)}
@@ -376,8 +426,8 @@ function KanbanBoard({ tasks, projects, teamMembers, onTaskUpdate, onTaskClick, 
             {/* Tasks */}
             <div 
               className={`
-                task-list flex-1 space-y-3 overflow-y-auto transition-colors duration-200
-                ${draggedOverColumn === column.id ? 'bg-white/5' : ''}
+                task-list flex-1 space-y-3 overflow-y-auto transition-all duration-200
+                ${draggedOverColumn === column.id ? 'border-2 border-orange-300 bg-orange-50 rounded-xl' : ''}
               `}
               onDragOver={(e) => handleDragOver(e, column.id, column.tasks)}
               onDrop={(e) => handleDrop(e, column.status)}
@@ -393,7 +443,7 @@ function KanbanBoard({ tasks, projects, teamMembers, onTaskUpdate, onTaskClick, 
                     draggable
                     onDragStart={(e) => handleDragStart(e, task)}
                     onDragEnd={handleDragEnd}
-                    className="task-card bg-white rounded-lg p-3 shadow-sm border border-gray-200 hover:shadow-md transition-shadow cursor-move"
+                    className="task-card bg-white rounded-xl p-4 shadow-sm border border-gray-200 hover:shadow-md hover:border-gray-300 transition-all cursor-move"
                   >
                     <div className="flex items-start justify-between mb-2">
                       <h4 className="text-sm font-medium text-gray-900 font-dm-sans line-clamp-2">

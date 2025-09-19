@@ -26,7 +26,7 @@ const CategoryBreakdownModal: React.FC<CategoryBreakdownModalProps> = ({
   // Fetch data when modal opens
   useEffect(() => {
     if (isOpen && month && year) {
-      console.log('Modal opened, fetching data for:', { month, year, type, businessUnitId });
+      // Modal opened, fetching data for the specified parameters
       fetchBreakdown();
     }
   }, [isOpen, month, year, type, businessUnitId, fetchBreakdown]);
@@ -86,7 +86,7 @@ const CategoryBreakdownModal: React.FC<CategoryBreakdownModalProps> = ({
 
   const colors = generateColors(breakdown.length);
 
-  const CustomTooltip = ({ active, payload }: any) => {
+  const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: Array<{ value: number; name: string; color: string; payload: any }> }) => {
     if (active && payload && payload.length) {
       const data = payload[0].payload;
       return (

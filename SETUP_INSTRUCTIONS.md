@@ -21,7 +21,8 @@ Since you're using Supabase directly (without CLI), follow these steps to set up
 
 ### Step 2: Add OpenAI API Key
 
-Add your OpenAI API key to your `.env` file:
+Add your OpenAI API key to your `x
+.env` file:
 
 ```bash
 # Add this line to your .env file

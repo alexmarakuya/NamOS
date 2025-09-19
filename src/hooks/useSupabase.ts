@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { supabase, DatabaseTransaction, DatabaseBusinessUnit, DatabaseAttachment, uploadFile, getFileUrl } from '../lib/supabase';
 import { Project, ProjectSpirit, SpiritConversation, SpiritInsight, ClientProfile } from '../types';
+import { DbTimeEntry, DbProject, DbSpirit, DbConversation, DbInsight } from '../types/database';
 import { createDefaultClientProfile } from '../lib/ai';
 
 // Type alias for backward compatibility
@@ -168,7 +169,7 @@ export const useCategoryBreakdown = (month: string, year: number, type: 'income'
 
   const fetchBreakdown = useCallback(async () => {
     if (!month || !year) {
-      console.log('No month or year provided:', { month, year });
+      // No month or year provided - return empty breakdown
       return;
     }
     
@@ -176,7 +177,7 @@ export const useCategoryBreakdown = (month: string, year: number, type: 'income'
       setLoading(true);
       setError(null);
       
-      console.log('Fetching breakdown for:', { month, year, type, businessUnitId });
+      // Fetching breakdown for the specified parameters
       
       // Create date range for the month - handle month names properly
       const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -192,7 +193,7 @@ export const useCategoryBreakdown = (month: string, year: number, type: 'income'
       const lastDay = new Date(year, monthNumber, 0).getDate();
       const endDate = `${year}-${monthNumber.toString().padStart(2, '0')}-${lastDay}`;
       
-      console.log('Date range:', { startDate, endDate });
+      // Date range calculated for the query
       
       let query = supabase
         .from('transactions')
@@ -212,7 +213,7 @@ export const useCategoryBreakdown = (month: string, year: number, type: 'income'
         throw error;
       }
 
-      console.log('Fetched data:', data);
+      // Data fetched successfully
 
       // Group by category and sum amounts
       const categoryMap = new Map<string, {amount: number, count: number}>();
@@ -234,7 +235,7 @@ export const useCategoryBreakdown = (month: string, year: number, type: 'income'
         }))
         .sort((a, b) => b.amount - a.amount);
 
-      console.log('Final breakdown:', breakdownArray);
+      // Breakdown calculation completed
       setBreakdown(breakdownArray);
     } catch (err) {
       console.error('Error in fetchBreakdown:', err);
@@ -558,7 +559,6 @@ export const useTeamMembers = () => {
       const { data, error } = await supabase
         .from('team_members')
         .select('*')
-        .eq('is_active', true)
         .order('full_name');
 
       if (error) throw error;
@@ -1009,7 +1009,7 @@ export const useProjectTaskStats = (projectId: string) => {
 };
 
 // Utility functions for time tracking
-export const convertDbTimeEntryToApp = (dbTimeEntry: any) => {
+export const convertDbTimeEntryToApp = (dbTimeEntry: DbTimeEntry) => {
   return {
     id: dbTimeEntry.id,
     user_id: dbTimeEntry.user_id,
@@ -1018,7 +1018,7 @@ export const convertDbTimeEntryToApp = (dbTimeEntry: any) => {
     description: dbTimeEntry.description,
     hours: parseFloat(dbTimeEntry.hours.toString()),
     date: new Date(dbTimeEntry.date),
-    is_billable: dbTimeEntry.is_billable,
+    is_billable: dbTimeEntry.is_billable ?? true,
     created_at: new Date(dbTimeEntry.created_at),
     project: dbTimeEntry.projects ? {
       id: dbTimeEntry.projects.id,
@@ -1033,7 +1033,7 @@ export const convertDbTimeEntryToApp = (dbTimeEntry: any) => {
   };
 };
 
-export const convertDbProjectToApp = (dbProject: any) => {
+export const convertDbProjectToApp = (dbProject: DbProject) => {
   return {
     id: dbProject.id,
     name: dbProject.name,
@@ -1123,26 +1123,55 @@ export const useProjectOperations = () => {
       setLoading(true);
       setError(null);
 
-      // First check if project has tasks
-      const { data: tasks, error: tasksError } = await supabase
-        .from('tasks')
-        .select('id')
-        .eq('project_id', projectId)
-        .limit(1);
+      // Check for related records and provide detailed feedback
+      const checks = await Promise.all([
+        supabase.from('tasks').select('id').eq('project_id', projectId).limit(1),
+        supabase.from('time_entries').select('id').eq('project_id', projectId).limit(1),
+        supabase.from('project_spirits').select('id').eq('project_id', projectId).limit(1)
+      ]);
 
-      if (tasksError) throw tasksError;
+      const [tasksResult, timeEntriesResult, spiritsResult] = checks;
 
-      if (tasks && tasks.length > 0) {
-        throw new Error('Cannot delete project with existing tasks. Please delete or reassign tasks first.');
+      // Check for errors in queries
+      if (tasksResult.error && tasksResult.error.code !== 'PGRST116') throw tasksResult.error;
+      if (timeEntriesResult.error && timeEntriesResult.error.code !== 'PGRST116') throw timeEntriesResult.error;
+      if (spiritsResult.error && spiritsResult.error.code !== 'PGRST116') throw spiritsResult.error;
+
+      const hasRelatedRecords = [];
+      if (tasksResult.data && tasksResult.data.length > 0) {
+        hasRelatedRecords.push('tasks');
+      }
+      if (timeEntriesResult.data && timeEntriesResult.data.length > 0) {
+        hasRelatedRecords.push('time entries');
+      }
+      if (spiritsResult.data && spiritsResult.data.length > 0) {
+        hasRelatedRecords.push('project spirits');
       }
 
+      // If there are related records, ask for confirmation
+      if (hasRelatedRecords.length > 0) {
+        const recordTypes = hasRelatedRecords.join(', ');
+        const confirmMessage = `This project has related ${recordTypes}. Deleting the project will also delete all related records. Are you sure you want to continue?`;
+        
+        if (!window.confirm(confirmMessage)) {
+          throw new Error('Project deletion cancelled by user');
+        }
+      }
+
+      // Proceed with deletion - foreign key constraints should handle cascading
       const { error } = await supabase
         .from('projects')
         .delete()
         .eq('id', projectId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Database deletion error:', error);
+        throw new Error(`Database error: ${error.message}`);
+      }
+
+      return true;
     } catch (err) {
+      console.error('Delete project error:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to delete project';
       setError(errorMessage);
       throw new Error(errorMessage);
@@ -1503,6 +1532,182 @@ export const useClientOperations = () => {
   };
 };
 
+// User Management Operations Hook
+export const useUserOperations = () => {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const createUser = useCallback(async (userData: {
+    full_name: string;
+    email: string;
+    slack_username?: string;
+    role: string;
+    hourly_rate?: number;
+    is_active?: boolean;
+  }) => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Generate a unique slack_user_id if not provided
+      const slack_user_id = userData.slack_username || `user_${Date.now()}`;
+
+      const { data, error: insertError } = await supabase
+        .from('team_members')
+        .insert({
+          slack_user_id,
+          slack_username: userData.slack_username || userData.email.split('@')[0],
+          full_name: userData.full_name,
+          email: userData.email,
+          role: userData.role,
+          hourly_rate: userData.hourly_rate || 0,
+          is_active: userData.is_active ?? true
+        })
+        .select()
+        .single();
+
+      if (insertError) throw insertError;
+      return data;
+    } catch (err) {
+      console.error('Error creating user:', err);
+      setError(err instanceof Error ? err.message : 'Failed to create user');
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const updateUser = useCallback(async (userId: string, updates: {
+    full_name?: string;
+    email?: string;
+    slack_username?: string;
+    role?: string;
+    hourly_rate?: number;
+    is_active?: boolean;
+  }) => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const { data, error: updateError } = await supabase
+        .from('team_members')
+        .update(updates)
+        .eq('id', userId)
+        .select()
+        .single();
+
+      if (updateError) throw updateError;
+      return data;
+    } catch (err) {
+      console.error('Error updating user:', err);
+      setError(err instanceof Error ? err.message : 'Failed to update user');
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const deleteUser = useCallback(async (userId: string) => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Check if user has any assigned tasks
+      const { data: assignedTasks, error: tasksError } = await supabase
+        .from('tasks')
+        .select('id')
+        .eq('assigned_to', userId)
+        .limit(1);
+
+      if (tasksError) throw tasksError;
+
+      if (assignedTasks && assignedTasks.length > 0) {
+        throw new Error('Cannot delete user with assigned tasks. Please reassign tasks first.');
+      }
+
+      // Check if user has any time entries
+      const { data: timeEntries, error: timeError } = await supabase
+        .from('time_entries')
+        .select('id')
+        .eq('user_id', userId)
+        .limit(1);
+
+      if (timeError) throw timeError;
+
+      if (timeEntries && timeEntries.length > 0) {
+        throw new Error('Cannot delete user with time entries. Please archive user instead.');
+      }
+
+      const { error: deleteError } = await supabase
+        .from('team_members')
+        .delete()
+        .eq('id', userId);
+
+      if (deleteError) throw deleteError;
+      return true;
+    } catch (err) {
+      console.error('Error deleting user:', err);
+      setError(err instanceof Error ? err.message : 'Failed to delete user');
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const archiveUser = useCallback(async (userId: string) => {
+    return updateUser(userId, { is_active: false });
+  }, [updateUser]);
+
+  const activateUser = useCallback(async (userId: string) => {
+    return updateUser(userId, { is_active: true });
+  }, [updateUser]);
+
+  const inviteUser = useCallback(async (userData: {
+    full_name: string;
+    email: string;
+    role: string;
+    hourly_rate?: number;
+  }) => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Create the user record
+      const user = await createUser({
+        ...userData,
+        is_active: false // User starts inactive until they accept invitation
+      });
+
+      if (!user) {
+        throw new Error('Failed to create user record');
+      }
+
+      // TODO: Send invitation email
+      // This would typically integrate with your email service
+      console.log('Invitation would be sent to:', userData.email);
+
+      return user;
+    } catch (err) {
+      console.error('Error inviting user:', err);
+      setError(err instanceof Error ? err.message : 'Failed to invite user');
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  }, [createUser]);
+
+  return {
+    createUser,
+    updateUser,
+    deleteUser,
+    archiveUser,
+    activateUser,
+    inviteUser,
+    loading,
+    error
+  };
+};
+
 // Project Spirits Hooks
 export const useProjectSpirits = () => {
   const [spirits, setSpirits] = useState<ProjectSpirit[]>([]);
@@ -1844,29 +2049,29 @@ export const useSpiritOperations = () => {
 };
 
 // Conversion functions
-const convertDbSpiritToApp = (dbSpirit: any): ProjectSpirit => {
+const convertDbSpiritToApp = (dbSpirit: DbSpirit): ProjectSpirit => {
   return {
     id: dbSpirit.id,
     project_id: dbSpirit.project_id,
     name: dbSpirit.name,
-    personality: {
-      tone: dbSpirit.personality_tone,
-      focus_areas: dbSpirit.personality_focus_areas || [],
-      communication_style: dbSpirit.personality_communication_style,
-      expertise_level: dbSpirit.personality_expertise_level,
+    personality: dbSpirit.personality || {
+      tone: 'professional',
+      focus_areas: [],
+      communication_style: 'direct',
+      expertise_level: 'intermediate',
     },
-    path_stage: dbSpirit.path_stage,
+    path_stage: dbSpirit.path_stage as 'review' | 'discovery' | 'planning' | 'design' | 'development' | 'testing' | 'delivery' | 'maintenance',
     path_progress: dbSpirit.path_progress,
     client_profile: dbSpirit.client_profile,
     memory_summary: dbSpirit.memory_summary || '',
-    last_interaction: new Date(dbSpirit.last_interaction),
+    last_interaction: dbSpirit.last_interaction ? new Date(dbSpirit.last_interaction) : new Date(),
     is_active: dbSpirit.is_active,
     created_at: new Date(dbSpirit.created_at),
     updated_at: new Date(dbSpirit.updated_at),
   };
 };
 
-const convertDbConversationToApp = (dbConversation: any): SpiritConversation => {
+const convertDbConversationToApp = (dbConversation: DbConversation): SpiritConversation => {
   return {
     id: dbConversation.id,
     spirit_id: dbConversation.spirit_id,
@@ -1878,11 +2083,11 @@ const convertDbConversationToApp = (dbConversation: any): SpiritConversation => 
   };
 };
 
-const convertDbInsightToApp = (dbInsight: any): SpiritInsight => {
+const convertDbInsightToApp = (dbInsight: DbInsight): SpiritInsight => {
   return {
     id: dbInsight.id,
     spirit_id: dbInsight.spirit_id,
-    type: dbInsight.type,
+    type: dbInsight.type as 'task_suggestion' | 'risk_alert' | 'opportunity' | 'pattern' | 'client_update',
     title: dbInsight.title,
     description: dbInsight.description,
     confidence: dbInsight.confidence,

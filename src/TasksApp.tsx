@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
+import { useAuth } from './contexts/AuthContext';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { Task, TaskStats, Project, TeamMember, TimeEntry } from './types';
 import { useProjects, useTeamMembers, useTasks, useTaskOperations, useProjectStats, useUrgentTasks, useTimeSensitiveProjects, useBusinessUnits, useProjectOperations, useClientsWithStatus, useClientOperations } from './hooks/useSupabase';
@@ -21,9 +22,10 @@ function TasksApp() {
   const navigate = useNavigate();
   const location = useLocation();
   const { projectId } = useParams();
+  const { user } = useAuth();
   
-  // TODO: Replace with actual user ID from auth context when implemented
-  const currentUserId = 'current-user';
+  // Get current user ID from auth context
+  const currentUserId = user?.id || 'anonymous';
   
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [viewMode, setViewMode] = useState<'kanban'>('kanban');
@@ -97,45 +99,21 @@ function TasksApp() {
   const { timeSensitiveProjects, loading: timeSensitiveLoading } = useTimeSensitiveProjects();
   const { createTask, updateTask, deleteTask } = useTaskOperations();
 
-  // Filter tasks based on current view and filters
-  const filteredTasks = useMemo(() => {
-    return tasks.filter(task => {
-      // For project detail view, only show tasks from selected project
-      if (currentView === 'project-detail' && effectiveSelectedProject) {
-        const projectMatch = task.project_id === effectiveSelectedProject;
-        const assigneeMatch = selectedAssignee === 'all' || task.assigned_to === selectedAssignee;
-        return projectMatch && assigneeMatch;
-      }
-      
-      // For tasks overview, show all tasks with optional assignee filter
-      if (currentView === 'tasks-overview') {
-        // Apply stat filter if active
-        let matchesStatFilter = true;
-        if (activeStatFilter && activeStatFilter !== 'all') {
-          switch (activeStatFilter) {
-            case 'my':
-              // Tasks assigned to or created by current user (placeholder logic)
-              matchesStatFilter = task.assigned_to === 'current-user' || task.created_by === 'current-user';
-              break;
-            case 'overdue':
-              matchesStatFilter = task.due_date && new Date(task.due_date) < new Date();
-              break;
-            case 'completed':
-              matchesStatFilter = task.status === 'done';
-              break;
-            default:
-              matchesStatFilter = true;
-          }
-        }
-        
-        const assigneeMatch = selectedAssignee === 'all' || task.assigned_to === selectedAssignee;
-        return matchesStatFilter && assigneeMatch;
-      }
-      
-      // Other views don't show tasks
-      return false;
-    });
-  }, [tasks, currentView, effectiveSelectedProject, selectedAssignee, activeStatFilter]);
+  // Get tasks for current view (no filtering here - filtering moved to KanbanBoard)
+  const viewTasks = useMemo(() => {
+    // For project detail view, only show tasks from selected project
+    if (currentView === 'project-detail' && effectiveSelectedProject) {
+      return tasks.filter(task => task.project_id === effectiveSelectedProject);
+    }
+    
+    // For tasks overview, show all tasks
+    if (currentView === 'tasks-overview') {
+      return tasks;
+    }
+    
+    // Other views don't show tasks
+    return [];
+  }, [tasks, currentView, effectiveSelectedProject]);
 
 
   const handleTaskUpdate = useCallback(async (taskId: string, updates: Partial<Task>) => {
@@ -146,8 +124,8 @@ function TasksApp() {
         due_date: updates.due_date ? updates.due_date.toISOString() : undefined
       };
       await updateTask(taskId, dbUpdates);
-      // Only refetch if there's an error - the optimistic update should be sufficient
-      // refetchTasks(); // Removed to prevent screen flashing
+      // Refetch to ensure UI is updated with latest data
+      refetchTasks();
     } catch (error) {
       console.error('Failed to update task:', error);
       // Refetch on error to revert optimistic update
@@ -329,6 +307,18 @@ function TasksApp() {
       alert('Failed to delete project. Please try again.');
     }
   }, [deleteProject, navigate]);
+
+  const handleProjectDragUpdate = useCallback(async (projectId: string, updates: Partial<Project>) => {
+    try {
+      await updateProject(projectId, updates);
+      // Refetch to ensure UI is updated with latest data
+      refetchProjects();
+    } catch (error) {
+      console.error('Failed to update project:', error);
+      // Refetch on error to revert optimistic update
+      refetchProjects();
+    }
+  }, [updateProject, refetchProjects]);
 
   const handleTaskDelete = useCallback(async (taskId: string) => {
     try {
@@ -555,13 +545,16 @@ function TasksApp() {
                 <div className="flex-1">
                   {activeProjectTab === 'tasks' ? (
                     <KanbanBoard 
-                      tasks={filteredTasks}
+                      tasks={viewTasks}
                       projects={projects}
                       teamMembers={teamMembers}
                       onTaskUpdate={handleTaskUpdate}
                       onTaskClick={handleTaskClick}
                       onAddTask={handleAddTaskToColumn}
                       isProjectDetail={true}
+                      selectedAssignee={selectedAssignee}
+                      selectedProject={effectiveSelectedProject}
+                      currentUserId={currentUserId}
                     />
                   ) : (
                     <div className="flex flex-col items-center justify-center h-full text-gray-400">
@@ -607,7 +600,7 @@ function TasksApp() {
             {currentView === 'projects-overview' ? 'Projects' : 
              currentView === 'tasks-overview' ? 'Tasks' : 
              currentView === 'clients-overview' ? 'Clients' : 'Overview'}
-            {activeStatFilter && (
+            {activeStatFilter && activeStatFilter !== 'all' && (
               <>
                 <span className="text-neutral-500 font-normal text-sm" style={{ 
                   transform: 'translateY(-6px)',
@@ -615,11 +608,7 @@ function TasksApp() {
                   marginRight: '5px'
                 }}>•</span>
                 <span className="text-2xl font-normal text-slate-600 font-dm-sans">
-                  {activeStatFilter === 'all' ? (
-                    currentView === 'projects-overview' ? 'All Projects' :
-                    currentView === 'tasks-overview' ? 'All Tasks' :
-                    'All Clients'
-                  ) : activeStatFilter === 'my' ? (
+                  {activeStatFilter === 'my' ? (
                     currentView === 'projects-overview' ? 'My Projects' :
                     currentView === 'tasks-overview' ? 'My Tasks' :
                     'My Clients'
@@ -748,6 +737,7 @@ function TasksApp() {
                  currentView === 'clients-overview' ? 'Add Client' : 'Add Task'}
             </button>
           )}
+
           </div>
         </div>
         </div>
@@ -1022,18 +1012,22 @@ function TasksApp() {
               onProjectSelect={(projectId) => {
                 navigate(`/projects/${projectId}`);
               }}
+              onProjectUpdate={handleProjectDragUpdate}
             />
           ) : currentView === 'clients-overview' ? (
                              <ClientsPage activeStatFilter={activeStatFilter} />
           ) : (
             <div className="dashboard-card">
               <KanbanBoard 
-                tasks={filteredTasks}
+                tasks={viewTasks}
                 projects={projects}
                 teamMembers={teamMembers}
                 onTaskUpdate={handleTaskUpdate}
                 onTaskClick={handleTaskClick}
                 onAddTask={handleAddTaskToColumn}
+                activeStatFilter={activeStatFilter}
+                selectedAssignee={selectedAssignee}
+                currentUserId={currentUserId}
               />
             </div>
           )}
@@ -1103,6 +1097,7 @@ function TasksApp() {
           onTaskDelete={handleTaskDelete}
         />
       )}
+
 
     </div>
   );

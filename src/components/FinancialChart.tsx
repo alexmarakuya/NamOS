@@ -24,15 +24,9 @@ const FinancialChart: React.FC<FinancialChartProps> = ({ data, activeFilter }) =
   });
 
   const handleBarClick = (data: any, type: 'income' | 'expense') => {
-    console.log('Bar clicked:', { data, type });
+    // Handle bar click event
     if (data && data.name) {
-      console.log('Opening modal with:', {
-        month: data.name,
-        year: new Date().getFullYear(),
-        type,
-        totalAmount: data[type],
-        activeFilter
-      });
+      // Opening modal with category data
       setModalState({
         isOpen: true,
         month: data.name,

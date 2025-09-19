@@ -1,3 +1,17 @@
+// Import common types
+import { 
+  UUID, 
+  DateString, 
+  TimestampString, 
+  SlackUserId, 
+  SlackUsername,
+  TaskStatus,
+  TaskPriority,
+  ProjectStatus,
+  ClientStatus,
+  ProjectType
+} from './common';
+
 export interface Transaction {
   id: string;
   date: Date;
@@ -88,6 +102,7 @@ export interface Client {
   logo_url?: string;
   contact_email?: string;
   contact_phone?: string;
+  website?: string;
   address?: string;
   notes?: string;
   created_at?: string;
