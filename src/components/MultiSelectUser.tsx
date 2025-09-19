@@ -108,6 +108,11 @@ const MultiSelectUser: React.FC<MultiSelectUserProps> = ({
                   +{selectedUsers.length - maxDisplay} more
                 </span>
               )}
+              {selectedUsers.length > 1 && (
+                <span className="text-xs text-orange-600 font-dm-sans ml-2">
+                  (Only first assignee saved)
+                </span>
+              )}
             </>
           )}
         </div>

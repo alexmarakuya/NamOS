@@ -147,9 +147,9 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
     setSaving(prev => ({ ...prev, assignees: true }));
     
     try {
+      // For now, only update the single assigned_to field until we update the database schema
       const updates = {
-        assignees: newAssigneeIds,
-        assigned_to: newAssigneeIds.length > 0 ? newAssigneeIds[0] : undefined // Keep backward compatibility
+        assigned_to: newAssigneeIds.length > 0 ? newAssigneeIds[0] : undefined
       };
       await updateTask(task.id, updates);
       onTaskUpdate(task.id, updates);
@@ -561,32 +561,32 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
                     <span className="text-sm text-gray-600 font-dm-sans">Priority</span>
                   </div>
                   <div className="flex-1">
-                    {editingPriority ? (
-                      <select
-                        value={priority}
-                        onChange={(e) => handlePriorityChange(e.target.value as typeof task.priority)}
-                        onBlur={() => setEditingPriority(false)}
+                {editingPriority ? (
+                  <select
+                    value={priority}
+                    onChange={(e) => handlePriorityChange(e.target.value as typeof task.priority)}
+                    onBlur={() => setEditingPriority(false)}
                         className="px-2 py-1 text-sm text-gray-700 bg-transparent border-0 focus:ring-0 font-dm-sans cursor-pointer hover:bg-gray-50 rounded-md"
-                        autoFocus
-                      >
-                        <option value="low">Low</option>
-                        <option value="medium">Medium</option>
-                        <option value="high">High</option>
-                        <option value="urgent">Urgent</option>
-                      </select>
-                    ) : (
-                      <span 
+                    autoFocus
+                  >
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                    <option value="urgent">Urgent</option>
+                  </select>
+                ) : (
+                  <span 
                         className={`inline-flex items-center px-2 py-1 rounded-full text-sm font-medium cursor-pointer transition-colors font-dm-sans ${
                           priority === 'urgent' ? 'bg-red-100 text-red-800' :
                           priority === 'high' ? 'bg-red-100 text-red-800' :
                           priority === 'medium' ? 'bg-yellow-100 text-yellow-800' :
                           'bg-gray-100 text-gray-800'
                         }`}
-                        onClick={() => setEditingPriority(true)}
-                      >
+                    onClick={() => setEditingPriority(true)}
+                  >
                         {priority === 'high' || priority === 'urgent' ? 'High' : priority}
-                      </span>
-                    )}
+                  </span>
+                )}
                   </div>
                 </div>
 
@@ -601,7 +601,7 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
                   <div className="flex-1">
                     <span className="inline-flex items-center px-2 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800 font-dm-sans">
                       Client
-                    </span>
+                  </span>
                   </div>
                 </div>
 

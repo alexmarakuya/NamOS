@@ -60,8 +60,7 @@ function AddTaskModal({ projects, teamMembers, onClose, onSubmit, defaultProject
       title: formData.title,
       description: formData.description || undefined,
       project_id: selectedProjects.length > 0 ? selectedProjects[0] : undefined, // Use selected project
-      assigned_to: assignedMembers.length > 0 ? assignedMembers[0] : undefined, // Main assignee for backward compatibility
-      assignees: assignedMembers, // Multiple assignees
+      assigned_to: assignedMembers.length > 0 ? assignedMembers[0] : undefined, // For now, only single assignee until DB is updated
       status: formData.status,
       priority: formData.priority,
       due_date: formData.due_date ? new Date(formData.due_date) : undefined,
