@@ -1,16 +1,17 @@
 import React, { useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { useTasks, useProjects, useTimeEntries } from '../hooks/useSupabase';
+import { useTasks, useProjects } from '../hooks/useSupabase';
 
 const WelcomeDashboard: React.FC = () => {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { tasks } = useTasks();
   const { projects } = useProjects();
-  const { timeEntries } = useTimeEntries();
 
   // Calculate user-specific stats
   const userStats = useMemo(() => {
-    if (!user) return { assignedTasks: 0, workingProjects: 0, supportingClients: 0, monthlyHours: 0 };
+    if (!user) return { assignedTasks: 0, workingProjects: 0, supportingClients: 0 };
 
     // Tasks assigned to current user
     const assignedTasks = tasks.filter(task => task.assigned_to === user.id).length;
@@ -34,30 +35,27 @@ const WelcomeDashboard: React.FC = () => {
         .filter(Boolean)
     ).size;
 
-    // Hours logged this month
-    const currentMonth = new Date().getMonth();
-    const currentYear = new Date().getFullYear();
-    const monthlyHours = timeEntries
-      .filter(entry => {
-        if (!entry.date || !entry.user_id) return false;
-        const entryDate = new Date(entry.date);
-        return (
-          entry.user_id === user.id &&
-          entryDate.getMonth() === currentMonth &&
-          entryDate.getFullYear() === currentYear
-        );
-      })
-      .reduce((total, entry) => total + (entry.hours || 0), 0);
-
     return {
       assignedTasks,
       workingProjects,
-      supportingClients,
-      monthlyHours: Math.round(monthlyHours * 10) / 10 // Round to 1 decimal
+      supportingClients
     };
-  }, [user, tasks, projects, timeEntries]);
+  }, [user, tasks, projects]);
 
   const displayName = user?.full_name || user?.slack_username || 'User';
+
+  // Navigation handlers
+  const handleTasksClick = () => {
+    navigate('/tasks?filter=my');
+  };
+
+  const handleProjectsClick = () => {
+    navigate('/projects?filter=my');
+  };
+
+  const handleClientsClick = () => {
+    navigate('/clients?filter=my');
+  };
 
   return (
     <div className="min-h-screen bg-white flex items-center justify-center p-8">
@@ -73,46 +71,45 @@ const WelcomeDashboard: React.FC = () => {
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-xl mx-auto">
           {/* Assigned Tasks */}
-          <div className="bg-gray-50 rounded-xl p-6 text-center">
+          <button 
+            onClick={handleTasksClick}
+            className="bg-gray-50 rounded-xl p-6 text-center hover:bg-gray-100 transition-colors cursor-pointer"
+          >
             <div className="text-2xl font-semibold text-gray-900 font-dm-sans mb-2">
               {userStats.assignedTasks}
             </div>
             <div className="text-sm text-gray-600 font-dm-sans">
               Tasks Assigned
             </div>
-          </div>
+          </button>
 
           {/* Working Projects */}
-          <div className="bg-gray-50 rounded-xl p-6 text-center">
+          <button 
+            onClick={handleProjectsClick}
+            className="bg-gray-50 rounded-xl p-6 text-center hover:bg-gray-100 transition-colors cursor-pointer"
+          >
             <div className="text-2xl font-semibold text-gray-900 font-dm-sans mb-2">
               {userStats.workingProjects}
             </div>
             <div className="text-sm text-gray-600 font-dm-sans">
               Projects Working
             </div>
-          </div>
+          </button>
 
           {/* Supporting Clients */}
-          <div className="bg-gray-50 rounded-xl p-6 text-center">
+          <button 
+            onClick={handleClientsClick}
+            className="bg-gray-50 rounded-xl p-6 text-center hover:bg-gray-100 transition-colors cursor-pointer"
+          >
             <div className="text-2xl font-semibold text-gray-900 font-dm-sans mb-2">
               {userStats.supportingClients}
             </div>
             <div className="text-sm text-gray-600 font-dm-sans">
               Clients Supporting
             </div>
-          </div>
-
-          {/* Monthly Hours */}
-          <div className="bg-gray-50 rounded-xl p-6 text-center">
-            <div className="text-2xl font-semibold text-gray-900 font-dm-sans mb-2">
-              {userStats.monthlyHours}h
-            </div>
-            <div className="text-sm text-gray-600 font-dm-sans">
-              Hours This Month
-            </div>
-          </div>
+          </button>
         </div>
 
         {/* Navigation Hint */}

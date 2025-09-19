@@ -62,6 +62,15 @@ function TasksApp() {
   const [isTimeLogModalOpen, setIsTimeLogModalOpen] = useState(false);
   const [teamDropdownOpen, setTeamDropdownOpen] = useState(false);
   const [activeStatFilter, setActiveStatFilter] = useState<string | null>('all');
+
+  // Check URL parameters for filter on mount
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const filterParam = searchParams.get('filter');
+    if (filterParam && ['all', 'my', 'overdue', 'updates', 'completed', 'active', 'leads', 'onboarding'].includes(filterParam)) {
+      setActiveStatFilter(filterParam);
+    }
+  }, [location.search]);
   const [projectGroupBy, setProjectGroupBy] = useState<'client' | 'status'>('client');
   const [activeProjectTab, setActiveProjectTab] = useState<'tasks' | 'files' | 'timesheet' | 'reports' | 'ai-chat'>('tasks');
   
