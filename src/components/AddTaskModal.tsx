@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Task, Project, TeamMember } from '../types';
 import MultiSelectUser from './MultiSelectUser';
+import MultiSelectProject from './MultiSelectProject';
 
 interface AddTaskModalProps {
   projects: Project[];
@@ -23,25 +24,21 @@ function AddTaskModal({ projects, teamMembers, onClose, onSubmit, defaultProject
     estimated_hours: ''
   });
 
-  // State for multiple assignees
+  // State for multiple assignees and projects
   const [assignedMembers, setAssignedMembers] = useState<string[]>([]);
+  const [selectedProjects, setSelectedProjects] = useState<string[]>(defaultProjectId ? [defaultProjectId] : []);
   
   // Dropdown states
-  const [projectDropdownOpen, setProjectDropdownOpen] = useState(false);
   const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
   const [priorityDropdownOpen, setPriorityDropdownOpen] = useState(false);
   
   // Refs for click outside handling
-  const projectDropdownRef = useRef<HTMLDivElement>(null);
   const statusDropdownRef = useRef<HTMLDivElement>(null);
   const priorityDropdownRef = useRef<HTMLDivElement>(null);
 
   // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (projectDropdownRef.current && !projectDropdownRef.current.contains(event.target as Node)) {
-        setProjectDropdownOpen(false);
-      }
       if (statusDropdownRef.current && !statusDropdownRef.current.contains(event.target as Node)) {
         setStatusDropdownOpen(false);
       }
@@ -62,7 +59,7 @@ function AddTaskModal({ projects, teamMembers, onClose, onSubmit, defaultProject
     const taskData: Omit<Task, 'id' | 'created_at' | 'updated_at'> = {
       title: formData.title,
       description: formData.description || undefined,
-      project_id: formData.project_id || undefined,
+      project_id: selectedProjects.length > 0 ? selectedProjects[0] : undefined, // Use selected project
       assigned_to: assignedMembers.length > 0 ? assignedMembers[0] : undefined, // Main assignee for backward compatibility
       assignees: assignedMembers, // Multiple assignees
       status: formData.status,
@@ -80,12 +77,6 @@ function AddTaskModal({ projects, teamMembers, onClose, onSubmit, defaultProject
   };
 
 
-  // Get display names for dropdowns
-  const getProjectDisplayName = (projectId: string) => {
-    const project = projects.find(p => p.id === projectId);
-    if (!project) return 'Select project...';
-    return project.client_name ? `${project.client_name}: ${project.name}` : project.name;
-  };
 
   const getStatusDisplayName = (status: string) => {
     const statusMap = {
@@ -164,48 +155,13 @@ function AddTaskModal({ projects, teamMembers, onClose, onSubmit, defaultProject
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Project
               </label>
-              <div className="relative" ref={projectDropdownRef}>
-                <button
-                  type="button"
-                  onClick={() => setProjectDropdownOpen(!projectDropdownOpen)}
-                  className="w-full px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 font-dm-sans border border-neutral-200 bg-white text-neutral-800 hover:border-neutral-300 hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent text-left flex items-center justify-between"
-                >
-                  <span className={formData.project_id ? 'text-neutral-900' : 'text-neutral-500'}>
-                    {formData.project_id ? getProjectDisplayName(formData.project_id) : 'Select project...'}
-                  </span>
-                  <svg className={`w-4 h-4 transition-transform ${projectDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
-                
-                {projectDropdownOpen && (
-                  <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-neutral-200 rounded-lg shadow-lg z-10 max-h-48 overflow-y-auto">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        handleChange('project_id', '');
-                        setProjectDropdownOpen(false);
-                      }}
-                      className="w-full px-3 py-2 text-left text-sm text-neutral-500 hover:bg-neutral-50 font-dm-sans"
-                    >
-                      Select project...
-                    </button>
-                    {projects.map(project => (
-                      <button
-                        key={project.id}
-                        type="button"
-                        onClick={() => {
-                          handleChange('project_id', project.id);
-                          setProjectDropdownOpen(false);
-                        }}
-                        className="w-full px-3 py-2 text-left text-sm text-neutral-900 hover:bg-neutral-50 font-dm-sans"
-                      >
-                        {project.client_name ? `${project.client_name}: ${project.name}` : project.name}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
+              <MultiSelectProject
+                projects={projects}
+                selectedProjectIds={selectedProjects}
+                onSelectionChange={setSelectedProjects}
+                allowMultiple={false}
+                placeholder="Search linked pages..."
+              />
             </div>
 
             {/* Assignees */}

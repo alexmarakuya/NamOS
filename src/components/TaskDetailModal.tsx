@@ -5,6 +5,7 @@ import { useTaskOperations, useTimeEntries } from '../hooks/useSupabase';
 import { supabase } from '../lib/supabase';
 import NotionStyleEditor from './NotionStyleEditor';
 import MultiSelectUser from './MultiSelectUser';
+import MultiSelectProject from './MultiSelectProject';
 
 interface TaskDetailModalProps {
   task: Task;
@@ -40,6 +41,10 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
       return [task.assigned_to];
     }
     return [];
+  });
+  const [selectedProjectIds, setSelectedProjectIds] = useState<string[]>(() => {
+    // For now, tasks are still single project, but this prepares for multi-project support
+    return task.project_id ? [task.project_id] : [];
   });
   const [showTimeLog, setShowTimeLog] = useState(false);
   const [timeLogHours, setTimeLogHours] = useState('');
@@ -164,6 +169,27 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
       setSaving(prev => ({ ...prev, assignees: false }));
     }
   }, [task.id, task.assignees, task.assigned_to, updateTask, onTaskUpdate]);
+
+  const handleProjectsChange = useCallback(async (newProjectIds: string[]) => {
+    setSelectedProjectIds(newProjectIds);
+    setSaving(prev => ({ ...prev, project: true }));
+    
+    try {
+      const updates = {
+        project_id: newProjectIds.length > 0 ? newProjectIds[0] : undefined // For now, use first project for backward compatibility
+      };
+      await updateTask(task.id, updates);
+      onTaskUpdate(task.id, updates);
+      setErrors(prev => ({ ...prev, project: '' }));
+    } catch (error) {
+      console.error('Failed to update project:', error);
+      setErrors(prev => ({ ...prev, project: 'Failed to update project' }));
+      // Revert on error
+      setSelectedProjectIds(task.project_id ? [task.project_id] : []);
+    } finally {
+      setSaving(prev => ({ ...prev, project: false }));
+    }
+  }, [task.id, task.project_id, updateTask, onTaskUpdate]);
 
   const handleTimeLog = async () => {
     if (!timeLogHours || parseFloat(timeLogHours) <= 0) {
@@ -392,38 +418,11 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
         <div className="flex-1 px-12 pb-12 overflow-y-auto">
           {activeTab === 'details' && (
             <div className="space-y-8">
-              {/* Task Properties */}
-              <div className="space-y-1">
-                {/* Project */}
-                <div className="flex items-center py-1.5 hover:bg-gray-50 rounded-lg px-3 -mx-3 transition-colors">
-                  <div className="flex items-center space-x-3 w-32 flex-shrink-0">
-                    <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                    </svg>
-                    <span className="text-sm text-gray-600 font-dm-sans">Project</span>
-                  </div>
-                  <div className="flex-1">
-                    <select
-                      value={task.project_id}
-                      onChange={(e) => {
-                        const updates = { project_id: e.target.value };
-                        updateTask(task.id, updates);
-                        onTaskUpdate(task.id, updates);
-                      }}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent font-dm-sans text-sm"
-                    >
-                      {projects.map((project) => (
-                        <option key={project.id} value={project.id}>
-                          {project.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                {/* Due Date */}
-                <div className="flex items-center py-1.5 hover:bg-gray-50 rounded-lg px-3 -mx-3 transition-colors">
-                  <div className="flex items-center space-x-3 w-32 flex-shrink-0">
+              {/* Task Properties - Notion Style */}
+              <div className="space-y-3">
+                {/* Deadline */}
+                <div className="flex items-center py-2">
+                  <div className="flex items-center space-x-3 w-28 flex-shrink-0">
                     <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
@@ -440,18 +439,18 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
                         updateTask(task.id, updateTaskPayload);
                         onTaskUpdate(task.id, onTaskUpdatePayload);
                       }}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent font-dm-sans text-sm"
+                      className="px-2 py-1 text-sm text-gray-700 bg-transparent border-0 focus:ring-0 font-dm-sans cursor-pointer hover:bg-gray-50 rounded-md"
                     />
                   </div>
                 </div>
 
-                {/* Assigned To */}
-                <div className="flex items-center py-1.5 hover:bg-gray-50 rounded-lg px-3 -mx-3 transition-colors">
-                  <div className="flex items-center space-x-3 w-32 flex-shrink-0">
+                {/* Owner */}
+                <div className="flex items-start py-2">
+                  <div className="flex items-center space-x-3 w-28 flex-shrink-0 mt-1">
                     <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                     </svg>
-                    <span className="text-sm text-gray-600 font-dm-sans">Assignees</span>
+                    <span className="text-sm text-gray-600 font-dm-sans">Owner</span>
                   </div>
                   <div className="flex-1">
                     <MultiSelectUser
@@ -470,8 +469,8 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
                 </div>
 
                 {/* Status */}
-                <div className="flex items-center py-1.5 hover:bg-gray-50 rounded-lg px-3 -mx-3 transition-colors">
-                  <div className="flex items-center space-x-3 w-32 flex-shrink-0">
+                <div className="flex items-center py-2">
+                  <div className="flex items-center space-x-3 w-28 flex-shrink-0">
                     <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
@@ -483,56 +482,126 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
                         value={status}
                         onChange={(e) => handleStatusChange(e.target.value as typeof task.status)}
                         onBlur={() => setEditingStatus(false)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent font-dm-sans text-sm"
+                        className="px-2 py-1 text-sm text-gray-700 bg-transparent border-0 focus:ring-0 font-dm-sans cursor-pointer hover:bg-gray-50 rounded-md"
                         autoFocus
                       >
                         <option value="backlog">Backlog</option>
                         <option value="todo">To Do</option>
                         <option value="in_progress">In Progress</option>
-                        <option value="review">In review</option>
+                        <option value="review">In Review</option>
                         <option value="done">Done</option>
                       </select>
                     ) : (
                       <span 
-                        className="inline-flex items-center px-0 py-1 text-sm text-gray-700 font-medium cursor-pointer hover:bg-gray-50 rounded-md transition-colors font-dm-sans"
+                        className={`inline-flex items-center px-2 py-1 rounded-full text-sm font-medium cursor-pointer transition-colors font-dm-sans ${
+                          status === 'done' ? 'bg-green-100 text-green-800' :
+                          status === 'in_progress' ? 'bg-yellow-100 text-yellow-800' :
+                          status === 'review' ? 'bg-purple-100 text-purple-800' :
+                          status === 'todo' ? 'bg-blue-100 text-blue-800' :
+                          'bg-gray-100 text-gray-800'
+                        }`}
                         onClick={() => setEditingStatus(true)}
                       >
-                        {status.replace('_', ' ')}
+                        {status === 'in_progress' ? 'Doing' : status.replace('_', ' ')}
                       </span>
                     )}
                   </div>
                 </div>
 
+                {/* Project */}
+                <div className="flex items-start py-2">
+                  <div className="flex items-center space-x-3 w-28 flex-shrink-0 mt-1">
+                    <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                    </svg>
+                    <span className="text-sm text-gray-600 font-dm-sans">Project</span>
+                  </div>
+                  <div className="flex-1">
+                    <MultiSelectProject
+                      projects={projects}
+                      selectedProjectIds={selectedProjectIds}
+                      onSelectionChange={handleProjectsChange}
+                      allowMultiple={false}
+                      placeholder="Select project..."
+                    />
+                    {errors.project && (
+                      <p className="text-red-500 text-xs mt-1 font-dm-sans">{errors.project}</p>
+                    )}
+                    {saving.project && (
+                      <p className="text-gray-500 text-xs mt-1 font-dm-sans">Saving...</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Alert */}
+                <div className="flex items-center py-2">
+                  <div className="flex items-center space-x-3 w-28 flex-shrink-0">
+                    <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                    </svg>
+                    <span className="text-sm text-gray-600 font-dm-sans">Alert</span>
+                  </div>
+                  <div className="flex-1">
+                    {task.due_date && new Date(task.due_date) <= new Date() ? (
+                      <span className="inline-flex items-center px-2 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800 font-dm-sans">
+                        🚨 Soon due
+                      </span>
+                    ) : (
+                      <span className="text-sm text-gray-500 font-dm-sans">Empty</span>
+                    )}
+                  </div>
+                </div>
+
                 {/* Priority */}
-                <div className="flex items-center py-1.5 hover:bg-gray-50 rounded-lg px-3 -mx-3 transition-colors">
-                  <div className="flex items-center space-x-3 w-32 flex-shrink-0">
+                <div className="flex items-center py-2">
+                  <div className="flex items-center space-x-3 w-28 flex-shrink-0">
                     <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                     <span className="text-sm text-gray-600 font-dm-sans">Priority</span>
                   </div>
                   <div className="flex-1">
-                {editingPriority ? (
-                  <select
-                    value={priority}
-                    onChange={(e) => handlePriorityChange(e.target.value as typeof task.priority)}
-                    onBlur={() => setEditingPriority(false)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent font-dm-sans text-sm"
-                    autoFocus
-                  >
-                    <option value="low">Low</option>
-                    <option value="medium">Medium</option>
-                    <option value="high">High</option>
-                    <option value="urgent">Urgent</option>
-                  </select>
-                ) : (
-                  <span 
-                    className="inline-flex items-center px-0 py-1 text-sm text-gray-700 font-medium cursor-pointer hover:bg-gray-50 rounded-md transition-colors font-dm-sans"
-                    onClick={() => setEditingPriority(true)}
-                  >
-                    {priority}
-                  </span>
-                )}
+                    {editingPriority ? (
+                      <select
+                        value={priority}
+                        onChange={(e) => handlePriorityChange(e.target.value as typeof task.priority)}
+                        onBlur={() => setEditingPriority(false)}
+                        className="px-2 py-1 text-sm text-gray-700 bg-transparent border-0 focus:ring-0 font-dm-sans cursor-pointer hover:bg-gray-50 rounded-md"
+                        autoFocus
+                      >
+                        <option value="low">Low</option>
+                        <option value="medium">Medium</option>
+                        <option value="high">High</option>
+                        <option value="urgent">Urgent</option>
+                      </select>
+                    ) : (
+                      <span 
+                        className={`inline-flex items-center px-2 py-1 rounded-full text-sm font-medium cursor-pointer transition-colors font-dm-sans ${
+                          priority === 'urgent' ? 'bg-red-100 text-red-800' :
+                          priority === 'high' ? 'bg-red-100 text-red-800' :
+                          priority === 'medium' ? 'bg-yellow-100 text-yellow-800' :
+                          'bg-gray-100 text-gray-800'
+                        }`}
+                        onClick={() => setEditingPriority(true)}
+                      >
+                        {priority === 'high' || priority === 'urgent' ? 'High' : priority}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Task Type */}
+                <div className="flex items-center py-2">
+                  <div className="flex items-center space-x-3 w-28 flex-shrink-0">
+                    <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                    </svg>
+                    <span className="text-sm text-gray-600 font-dm-sans">Task Type</span>
+                  </div>
+                  <div className="flex-1">
+                    <span className="inline-flex items-center px-2 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800 font-dm-sans">
+                      Client
+                    </span>
                   </div>
                 </div>
 
