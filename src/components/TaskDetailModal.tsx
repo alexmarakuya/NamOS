@@ -6,6 +6,7 @@ import { supabase } from '../lib/supabase';
 import NotionStyleEditor from './NotionStyleEditor';
 import MultiSelectUser from './MultiSelectUser';
 import MultiSelectProject from './MultiSelectProject';
+import { FormField, Input, Textarea, Select, Button } from './FormField';
 
 interface TaskDetailModalProps {
   task: Task;
@@ -479,11 +480,11 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
                   </div>
                   <div className="flex-1">
                     {editingStatus ? (
-                      <select
+                      <Select
                         value={status}
                         onChange={(e) => handleStatusChange(e.target.value as typeof task.status)}
                         onBlur={() => setEditingStatus(false)}
-                        className="px-2 py-1 text-sm text-gray-700 bg-transparent border-0 focus:ring-0 font-dm-sans cursor-pointer hover:bg-gray-50 rounded-md"
+                        className="bg-transparent border-0 focus:ring-0 cursor-pointer hover:bg-gray-50"
                         autoFocus
                       >
                         <option value="backlog">Backlog</option>
@@ -491,7 +492,7 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
                         <option value="in_progress">In Progress</option>
                         <option value="review">In Review</option>
                         <option value="done">Done</option>
-                      </select>
+                      </Select>
                     ) : (
                       <span 
                         className={`inline-flex items-center px-2 py-1 rounded-full text-sm font-medium cursor-pointer transition-colors font-dm-sans ${
@@ -563,18 +564,18 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
                   </div>
                   <div className="flex-1">
                 {editingPriority ? (
-                  <select
+                  <Select
                     value={priority}
                     onChange={(e) => handlePriorityChange(e.target.value as typeof task.priority)}
                     onBlur={() => setEditingPriority(false)}
-                        className="px-2 py-1 text-sm text-gray-700 bg-transparent border-0 focus:ring-0 font-dm-sans cursor-pointer hover:bg-gray-50 rounded-md"
+                    className="bg-transparent border-0 focus:ring-0 cursor-pointer hover:bg-gray-50"
                     autoFocus
                   >
                     <option value="low">Low</option>
                     <option value="medium">Medium</option>
                     <option value="high">High</option>
                     <option value="urgent">Urgent</option>
-                  </select>
+                  </Select>
                 ) : (
                   <span 
                         className={`inline-flex items-center px-2 py-1 rounded-full text-sm font-medium cursor-pointer transition-colors font-dm-sans ${
@@ -636,52 +637,41 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
               {showTimeLog && (
                 <div className="bg-gray-50 rounded-lg p-6 space-y-4">
                   <h4 className="font-medium text-gray-900 font-dm-sans">Log Time</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1 font-dm-sans">
-                        Hours
-                      </label>
-                      <input
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <FormField label="Hours">
+                      <Input
                         type="number"
                         step="0.25"
                         value={timeLogHours}
                         onChange={(e) => setTimeLogHours(e.target.value)}
-                        className="w-full px-0 py-2 border-0 border-b border-gray-200 focus:border-gray-400 focus:ring-0 bg-transparent text-gray-900 font-dm-sans text-base placeholder-gray-400"
                         placeholder="0.0"
                       />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1 font-dm-sans">
-                        Date
-                      </label>
-                      <input
+                    </FormField>
+                    <FormField label="Date">
+                      <Input
                         type="date"
                         value={timeLogDate}
                         onChange={(e) => setTimeLogDate(e.target.value)}
-                        className="w-full px-0 py-2 border-0 border-b border-gray-200 focus:border-gray-400 focus:ring-0 bg-transparent text-gray-900 font-dm-sans text-base"
                       />
-                    </div>
+                    </FormField>
                     <div className="flex items-end">
-                      <button
+                      <Button
                         onClick={handleTimeLog}
-                        className="px-4 py-2 bg-orange-600 text-white rounded-md hover:bg-orange-700 transition-colors font-dm-sans text-sm"
+                        variant="primary"
+                        size="sm"
                       >
                         Log Time
-                      </button>
+                      </Button>
                     </div>
                   </div>
-              <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1 font-dm-sans">
-                      Description
-                    </label>
-                <textarea
+              <FormField label="Description">
+                <Textarea
                       value={timeLogDescription}
                       onChange={(e) => setTimeLogDescription(e.target.value)}
-                      className="w-full px-0 py-2 border-0 border-b border-gray-200 focus:border-gray-400 focus:ring-0 bg-transparent text-gray-900 font-dm-sans text-base placeholder-gray-400 resize-none"
                       placeholder="What did you work on?"
                       rows={2}
                 />
-              </div>
+              </FormField>
                 </div>
               )}
               

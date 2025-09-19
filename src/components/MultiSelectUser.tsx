@@ -75,10 +75,10 @@ const MultiSelectUser: React.FC<MultiSelectUserProps> = ({
     <div className="relative" ref={dropdownRef}>
       {/* Selected Users Display */}
       <div 
-        className="w-full min-h-[42px] px-3 py-2 border border-gray-300 rounded-lg focus-within:ring-2 focus-within:ring-orange-500 focus-within:border-transparent cursor-pointer bg-white"
+        className="w-full min-h-[32px] px-2 py-1.5 border border-gray-300 rounded-md focus-within:ring-1 focus-within:ring-orange-500 focus-within:border-transparent cursor-pointer bg-white"
         onClick={() => setIsOpen(!isOpen)}
       >
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-1">
           {selectedUsers.length === 0 ? (
             <span className="text-gray-500 text-sm font-dm-sans">{placeholder}</span>
           ) : (
@@ -86,9 +86,9 @@ const MultiSelectUser: React.FC<MultiSelectUserProps> = ({
               {selectedUsers.slice(0, maxDisplay).map((user) => (
                 <div
                   key={user.id}
-                  className="flex items-center space-x-2 bg-gray-100 rounded-full px-2 py-1 text-sm"
+                  className="flex items-center space-x-1 bg-gray-100 rounded-full px-1.5 py-0.5 text-xs"
                 >
-                  <div className={`w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-medium ${getAvatarColor(user.id)}`}>
+                  <div className={`w-4 h-4 rounded-full flex items-center justify-center text-white text-xs font-medium ${getAvatarColor(user.id)}`}>
                     {getUserInitials(user)}
                   </div>
                   <span className="font-dm-sans text-gray-700">{getUserDisplayName(user)}</span>
@@ -97,14 +97,14 @@ const MultiSelectUser: React.FC<MultiSelectUserProps> = ({
                       e.stopPropagation();
                       removeUser(user.id);
                     }}
-                    className="text-gray-400 hover:text-gray-600 ml-1"
+                    className="text-gray-400 hover:text-gray-600 ml-0.5 text-sm"
                   >
                     ×
                   </button>
                 </div>
               ))}
               {selectedUsers.length > maxDisplay && (
-                <span className="text-sm text-gray-500 font-dm-sans">
+                <span className="text-xs text-gray-500 font-dm-sans">
                   +{selectedUsers.length - maxDisplay} more
                 </span>
               )}
@@ -115,42 +115,44 @@ const MultiSelectUser: React.FC<MultiSelectUserProps> = ({
 
       {/* Dropdown */}
       {isOpen && (
-        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-64 overflow-hidden">
+        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-48 overflow-hidden">
           {/* Search Input */}
-          <div className="p-3 border-b border-gray-200">
+          <div className="p-2 border-b border-gray-200">
             <input
               type="text"
               placeholder="Search users..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full px-2 py-1 text-sm border-0 focus:ring-0 font-dm-sans placeholder-gray-400"
+              className="w-full px-2 py-1 text-xs border-0 focus:ring-0 font-dm-sans placeholder-gray-400"
               autoFocus
             />
           </div>
 
           {/* Selected Users Section */}
           {selectedUsers.length > 0 && (
-            <div className="p-3 bg-gray-50 border-b border-gray-200">
-              <div className="text-xs font-medium text-gray-500 mb-2 font-dm-sans">SELECTED</div>
-              <div className="space-y-2">
+            <div className="p-2 bg-gray-50 border-b border-gray-200">
+              <div className="text-xs font-medium text-gray-500 mb-1 font-dm-sans">SELECTED</div>
+              <div className="space-y-1">
                 {selectedUsers.map((user) => (
                   <div
                     key={user.id}
-                    className="flex items-center space-x-3 p-2 rounded-lg bg-white border border-gray-200"
+                    className="flex items-center space-x-2 p-1.5 rounded-md bg-white border border-gray-200"
                   >
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-medium ${getAvatarColor(user.id)}`}>
+                    <div className={`w-5 h-5 rounded-full flex items-center justify-center text-white text-xs font-medium ${getAvatarColor(user.id)}`}>
                       {getUserInitials(user)}
                     </div>
                     <div className="flex-1">
-                      <div className="text-sm font-medium text-gray-900 font-dm-sans">
+                      <div className="text-xs font-medium text-gray-900 font-dm-sans">
                         {getUserDisplayName(user)}
                       </div>
                     </div>
                     <button
                       onClick={() => removeUser(user.id)}
-                      className="text-gray-400 hover:text-gray-600"
+                      className="text-gray-400 hover:text-red-500 p-0.5"
                     >
-                      ×
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
                     </button>
                   </div>
                 ))}
@@ -159,24 +161,24 @@ const MultiSelectUser: React.FC<MultiSelectUserProps> = ({
           )}
 
           {/* Available Users */}
-          <div className="max-h-48 overflow-y-auto">
+          <div className="max-h-32 overflow-y-auto">
             {availableUsers.length === 0 ? (
-              <div className="p-4 text-center text-gray-500 text-sm font-dm-sans">
+              <div className="p-2 text-center text-gray-500 text-xs font-dm-sans">
                 {searchTerm ? 'No users found' : 'All users selected'}
               </div>
             ) : (
-              <div className="p-2">
+              <div className="p-1">
                 {availableUsers.map((user) => (
                   <button
                     key={user.id}
                     onClick={() => toggleUser(user.id)}
-                    className="w-full flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-50 transition-colors"
+                    className="w-full flex items-center space-x-2 p-1.5 rounded-md hover:bg-gray-50 transition-colors"
                   >
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-medium ${getAvatarColor(user.id)}`}>
+                    <div className={`w-5 h-5 rounded-full flex items-center justify-center text-white text-xs font-medium ${getAvatarColor(user.id)}`}>
                       {getUserInitials(user)}
                     </div>
                     <div className="flex-1 text-left">
-                      <div className="text-sm font-medium text-gray-900 font-dm-sans">
+                      <div className="text-xs font-medium text-gray-900 font-dm-sans">
                         {getUserDisplayName(user)}
                       </div>
                       {user.role && (

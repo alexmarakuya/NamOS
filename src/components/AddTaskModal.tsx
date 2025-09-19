@@ -1,7 +1,8 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Task, Project, TeamMember } from '../types';
 import MultiSelectUser from './MultiSelectUser';
 import MultiSelectProject from './MultiSelectProject';
+import { FormField, Input, Textarea, Select, Button } from './FormField';
 
 interface AddTaskModalProps {
   projects: Project[];
@@ -27,31 +28,6 @@ function AddTaskModal({ projects, teamMembers, onClose, onSubmit, defaultProject
   // State for multiple assignees and projects
   const [assignedMembers, setAssignedMembers] = useState<string[]>([]);
   const [selectedProjects, setSelectedProjects] = useState<string[]>(defaultProjectId ? [defaultProjectId] : []);
-  
-  // Dropdown states
-  const [statusDropdownOpen, setStatusDropdownOpen] = useState(false);
-  const [priorityDropdownOpen, setPriorityDropdownOpen] = useState(false);
-  
-  // Refs for click outside handling
-  const statusDropdownRef = useRef<HTMLDivElement>(null);
-  const priorityDropdownRef = useRef<HTMLDivElement>(null);
-
-  // Close dropdowns when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (statusDropdownRef.current && !statusDropdownRef.current.contains(event.target as Node)) {
-        setStatusDropdownOpen(false);
-      }
-      if (priorityDropdownRef.current && !priorityDropdownRef.current.contains(event.target as Node)) {
-        setPriorityDropdownOpen(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -76,29 +52,6 @@ function AddTaskModal({ projects, teamMembers, onClose, onSubmit, defaultProject
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-
-
-  const getStatusDisplayName = (status: string) => {
-    const statusMap = {
-      'backlog': 'Backlog',
-      'todo': 'To Do',
-      'in_progress': 'In Progress',
-      'review': 'Review',
-      'done': 'Done'
-    };
-    return statusMap[status as keyof typeof statusMap] || status;
-  };
-
-  const getPriorityDisplayName = (priority: string) => {
-    const priorityMap = {
-      'low': 'Low',
-      'medium': 'Medium',
-      'high': 'High',
-      'urgent': 'Urgent'
-    };
-    return priorityMap[priority as keyof typeof priorityMap] || priority;
-  };
-
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4">
       <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
@@ -116,45 +69,32 @@ function AddTaskModal({ projects, teamMembers, onClose, onSubmit, defaultProject
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-6">
+        <form onSubmit={handleSubmit} className="p-4 space-y-4">
           {/* Title */}
-          <div>
-            <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
-              Task Title *
-            </label>
-            <input
+          <FormField label="Task Title" required>
+            <Input
               type="text"
-              id="title"
               required
               value={formData.title}
               onChange={(e) => handleChange('title', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent font-dm-sans"
               placeholder="Enter task title..."
             />
-          </div>
+          </FormField>
 
           {/* Description */}
-          <div>
-            <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
-              Description
-            </label>
-            <textarea
-              id="description"
-              rows={3}
+          <FormField label="Description">
+            <Textarea
+              rows={2}
               value={formData.description}
               onChange={(e) => handleChange('description', e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent font-dm-sans"
               placeholder="Enter task description..."
             />
-          </div>
+          </FormField>
 
           {/* Project and Assignee Row */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {/* Project */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Project
-              </label>
+            <FormField label="Project">
               <MultiSelectProject
                 projects={projects}
                 selectedProjectIds={selectedProjects}
@@ -162,153 +102,89 @@ function AddTaskModal({ projects, teamMembers, onClose, onSubmit, defaultProject
                 allowMultiple={false}
                 placeholder="Search linked pages..."
               />
-            </div>
+            </FormField>
 
             {/* Assignees */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Assignees
-              </label>
+            <FormField label="Assignees">
               <MultiSelectUser
                 teamMembers={teamMembers}
                 selectedUserIds={assignedMembers}
                 onSelectionChange={setAssignedMembers}
                 placeholder="Select as many as you like"
               />
-            </div>
+            </FormField>
           </div>
 
           {/* Status and Priority Row */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {/* Status */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Status
-              </label>
-              <div className="relative" ref={statusDropdownRef}>
-                <button
-                  type="button"
-                  onClick={() => setStatusDropdownOpen(!statusDropdownOpen)}
-                  className="w-full px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 font-dm-sans border border-neutral-200 bg-white text-neutral-800 hover:border-neutral-300 hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent text-left flex items-center justify-between"
-                >
-                  <span className="text-neutral-900">
-                    {getStatusDisplayName(formData.status)}
-                  </span>
-                  <svg className={`w-4 h-4 transition-transform ${statusDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
-                
-                {statusDropdownOpen && (
-                  <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-neutral-200 rounded-lg shadow-lg z-10">
-                    {['backlog', 'todo', 'in_progress', 'review', 'done'].map(status => (
-                      <button
-                        key={status}
-                        type="button"
-                        onClick={() => {
-                          handleChange('status', status);
-                          setStatusDropdownOpen(false);
-                        }}
-                        className="w-full px-3 py-2 text-left text-sm text-neutral-900 hover:bg-neutral-50 font-dm-sans"
-                      >
-                        {getStatusDisplayName(status)}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
+            <FormField label="Status">
+              <Select
+                value={formData.status}
+                onChange={(e) => handleChange('status', e.target.value)}
+              >
+                <option value="backlog">Backlog</option>
+                <option value="todo">To Do</option>
+                <option value="in_progress">In Progress</option>
+                <option value="review">Review</option>
+                <option value="done">Done</option>
+              </Select>
+            </FormField>
 
             {/* Priority */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Priority
-              </label>
-              <div className="relative" ref={priorityDropdownRef}>
-                <button
-                  type="button"
-                  onClick={() => setPriorityDropdownOpen(!priorityDropdownOpen)}
-                  className="w-full px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 font-dm-sans border border-neutral-200 bg-white text-neutral-800 hover:border-neutral-300 hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent text-left flex items-center justify-between"
-                >
-                  <span className="text-neutral-900">
-                    {getPriorityDisplayName(formData.priority)}
-                  </span>
-                  <svg className={`w-4 h-4 transition-transform ${priorityDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </button>
-                
-                {priorityDropdownOpen && (
-                  <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-neutral-200 rounded-lg shadow-lg z-10">
-                    {['low', 'medium', 'high', 'urgent'].map(priority => (
-                      <button
-                        key={priority}
-                        type="button"
-                        onClick={() => {
-                          handleChange('priority', priority);
-                          setPriorityDropdownOpen(false);
-                        }}
-                        className="w-full px-3 py-2 text-left text-sm text-neutral-900 hover:bg-neutral-50 font-dm-sans"
-                      >
-                        {getPriorityDisplayName(priority)}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
+            <FormField label="Priority">
+              <Select
+                value={formData.priority}
+                onChange={(e) => handleChange('priority', e.target.value)}
+              >
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+                <option value="urgent">Urgent</option>
+              </Select>
+            </FormField>
           </div>
 
           {/* Due Date and Estimated Hours Row */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {/* Due Date */}
-            <div>
-              <label htmlFor="due_date" className="block text-sm font-medium text-gray-700 mb-2">
-                Due Date
-              </label>
-              <input
+            <FormField label="Due Date">
+              <Input
                 type="date"
-                id="due_date"
                 value={formData.due_date}
                 onChange={(e) => handleChange('due_date', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent font-dm-sans"
               />
-            </div>
+            </FormField>
 
             {/* Estimated Hours */}
-            <div>
-              <label htmlFor="estimated_hours" className="block text-sm font-medium text-gray-700 mb-2">
-                Estimated Hours
-              </label>
-              <input
+            <FormField label="Estimated Hours">
+              <Input
                 type="number"
-                id="estimated_hours"
                 min="0"
                 step="0.5"
                 value={formData.estimated_hours}
                 onChange={(e) => handleChange('estimated_hours', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent font-dm-sans"
                 placeholder="0.0"
               />
-            </div>
+            </FormField>
           </div>
 
 
           {/* Form Actions */}
-          <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
-            <button
+          <div className="flex justify-end space-x-2 pt-3 border-t border-gray-200">
+            <Button
               type="button"
+              variant="secondary"
               onClick={onClose}
-              className="btn-sm text-sm font-medium text-neutral-500 hover:text-neutral-600 bg-transparent border border-neutral-200 hover:border-neutral-300 rounded-lg hover:bg-cream-dark transition-colors font-dm-sans"
             >
               Cancel
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
-              className="btn-sm text-sm font-medium text-white bg-accent-500 rounded-lg hover:bg-accent-600 transition-colors font-dm-sans"
+              variant="primary"
             >
               Create Task
-            </button>
+            </Button>
           </div>
         </form>
       </div>
