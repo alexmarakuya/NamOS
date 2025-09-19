@@ -651,6 +651,7 @@ export const useTaskOperations = () => {
     description?: string;
     project_id?: string;
     assigned_to?: string;
+    assignees?: string[]; // New field for multiple assignees
     status?: 'backlog' | 'todo' | 'in_progress' | 'review' | 'done';
     priority?: 'low' | 'medium' | 'high' | 'urgent';
     due_date?: string;
@@ -691,6 +692,7 @@ export const useTaskOperations = () => {
     description?: string;
     project_id?: string;
     assigned_to?: string;
+    assignees?: string[]; // New field for multiple assignees
     status?: 'backlog' | 'todo' | 'in_progress' | 'review' | 'done';
     priority?: 'low' | 'medium' | 'high' | 'urgent';
     due_date?: string;

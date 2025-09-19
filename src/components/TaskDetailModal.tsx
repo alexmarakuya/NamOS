@@ -147,8 +147,9 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
     setSaving(prev => ({ ...prev, assignees: true }));
     
     try {
-      // For now, only update the single assigned_to field until we update the database schema
+      // Now we can update both assignees array and assigned_to (the trigger will sync them)
       const updates = {
+        assignees: newAssigneeIds.length > 0 ? newAssigneeIds : undefined,
         assigned_to: newAssigneeIds.length > 0 ? newAssigneeIds[0] : undefined
       };
       await updateTask(task.id, updates);
