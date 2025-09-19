@@ -2,8 +2,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 
 interface LeftNavProps {
-  activeApp: 'financial' | 'timesheet' | 'projects' | 'tasks' | 'clients' | 'users';
-  onAppChange: (app: 'financial' | 'timesheet' | 'projects' | 'tasks' | 'clients' | 'users') => void;
+  activeApp: 'dashboard' | 'financial' | 'projects' | 'tasks' | 'clients' | 'users';
+  onAppChange: (app: 'dashboard' | 'financial' | 'projects' | 'tasks' | 'clients' | 'users') => void;
 }
 
 const LeftNav: React.FC<LeftNavProps> = ({ activeApp, onAppChange }) => {
@@ -27,6 +27,18 @@ const LeftNav: React.FC<LeftNavProps> = ({ activeApp, onAppChange }) => {
   }, []);
 
   const navItems = [
+    {
+      id: 'dashboard' as const,
+      name: 'Dashboard',
+      icon: (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="3" y="3" width="7" height="7"></rect>
+          <rect x="14" y="3" width="7" height="7"></rect>
+          <rect x="14" y="14" width="7" height="7"></rect>
+          <rect x="3" y="14" width="7" height="7"></rect>
+        </svg>
+      )
+    },
     {
       id: 'projects' as const,
       name: 'Projects',
@@ -71,16 +83,17 @@ const LeftNav: React.FC<LeftNavProps> = ({ activeApp, onAppChange }) => {
     //     </svg>
     //   )
     // },
-    {
-      id: 'timesheet' as const,
-      name: 'Timesheet',
-      icon: (
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <circle cx="12" cy="12" r="10"></circle>
-          <polyline points="12,6 12,12 16,14"></polyline>
-        </svg>
-      )
-    }
+    // Temporarily hide timesheet
+    // {
+    //   id: 'timesheet' as const,
+    //   name: 'Timesheet',
+    //   icon: (
+    //     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    //       <circle cx="12" cy="12" r="10"></circle>
+    //       <polyline points="12,6 12,12 16,14"></polyline>
+    //     </svg>
+    //   )
+    // }
   ];
 
   return (

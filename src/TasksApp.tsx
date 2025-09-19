@@ -101,8 +101,8 @@ function TasksApp() {
 
   // Get tasks for current view (no filtering here - filtering moved to KanbanBoard)
   const viewTasks = useMemo(() => {
-    // For project detail view, only show tasks from selected project
-    if (currentView === 'project-detail' && effectiveSelectedProject) {
+      // For project detail view, only show tasks from selected project
+      if (currentView === 'project-detail' && effectiveSelectedProject) {
       return tasks.filter(task => task.project_id === effectiveSelectedProject);
     }
     
@@ -297,16 +297,27 @@ function TasksApp() {
 
   const handleProjectDelete = useCallback(async (projectId: string) => {
     try {
+      console.log('🗑️ TasksApp: Starting project deletion for ID:', projectId);
       await deleteProject(projectId);
+      console.log('✅ TasksApp: Project deleted successfully');
+      
       setIsAddProjectModalOpen(false);
       setEditingProject(null);
+      
+      // Refetch projects to update the UI
+      await refetchProjects();
+      
       // Navigate back to projects overview after deletion
-      navigate('/tasks');
+      navigate('/projects');
+      
+      // Show success message
+      alert('Project deleted successfully!');
     } catch (error) {
-      console.error('Failed to delete project:', error);
-      alert('Failed to delete project. Please try again.');
+      console.error('❌ TasksApp: Failed to delete project:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      alert(`Failed to delete project: ${errorMessage}`);
     }
-  }, [deleteProject, navigate]);
+  }, [deleteProject, navigate, refetchProjects]);
 
   const handleProjectDragUpdate = useCallback(async (projectId: string, updates: Partial<Project>) => {
     try {

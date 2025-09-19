@@ -622,3 +622,40 @@ input[type="reset"]:focus {
   outline: none !important;
   box-shadow: none !important;
 }
+
+/* Notion-style minimal dropdowns */
+.notion-select {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background-image: none;
+  background-color: transparent;
+  border: none;
+  outline: none;
+  box-shadow: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+}
+
+.notion-select:focus {
+  outline: none !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+
+.notion-select::-ms-expand {
+  display: none;
+}
+
+/* Hide date input calendar icon on webkit browsers */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  opacity: 0;
+  cursor: pointer;
+}
+
+input[type="date"]::-webkit-inner-spin-button,
+input[type="date"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}

@@ -1,9 +1,10 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import FinancialApp from './FinancialApp';
-import TimeApp from './TimeApp';
+// import TimeApp from './TimeApp'; // Temporarily hidden
 import TasksApp from './TasksApp';
 import UserApp from './UserApp';
+import WelcomeDashboard from './components/WelcomeDashboard';
 import LeftNav from './components/LeftNav';
 import ProtectedRoute from './components/ProtectedRoute';
 import { AuthProvider } from './contexts/AuthContext';
@@ -13,23 +14,23 @@ function AppContent() {
   const location = useLocation();
   
   // Determine active app from URL
-  const getActiveApp = (): 'financial' | 'timesheet' | 'projects' | 'tasks' | 'clients' | 'users' => {
+  const getActiveApp = (): 'dashboard' | 'financial' | 'projects' | 'tasks' | 'clients' | 'users' => {
+    if (location.pathname === '/dashboard' || location.pathname === '/') return 'dashboard';
     if (location.pathname.startsWith('/financial')) return 'financial';
-    if (location.pathname.startsWith('/timesheet')) return 'timesheet';
     if (location.pathname.startsWith('/projects')) return 'projects';
     if (location.pathname.startsWith('/tasks')) return 'tasks';
     if (location.pathname.startsWith('/clients')) return 'clients';
     if (location.pathname.startsWith('/users')) return 'users';
-    return 'projects';
+    return 'dashboard';
   };
 
-  const handleAppChange = (app: 'financial' | 'timesheet' | 'projects' | 'tasks' | 'clients' | 'users') => {
+  const handleAppChange = (app: 'dashboard' | 'financial' | 'projects' | 'tasks' | 'clients' | 'users') => {
     switch (app) {
+      case 'dashboard':
+        window.location.href = '/dashboard';
+        break;
       case 'financial':
         window.location.href = '/financial';
-        break;
-      case 'timesheet':
-        window.location.href = '/timesheet';
         break;
       case 'projects':
         window.location.href = '/projects';
@@ -62,14 +63,16 @@ function AppContent() {
         {/* Main Content Area */}
         <div className={dashboardMainClass}>
           <Routes>
+            <Route path="/dashboard" element={<WelcomeDashboard />} />
             <Route path="/financial/*" element={<FinancialApp />} />
-            <Route path="/timesheet/*" element={<TimeApp />} />
+            {/* Temporarily hide timesheet */}
+            {/* <Route path="/timesheet/*" element={<TimeApp />} /> */}
             <Route path="/tasks" element={<TasksApp />} />
             <Route path="/projects" element={<TasksApp />} />
             <Route path="/projects/:projectId" element={<TasksApp />} />
             <Route path="/clients" element={<TasksApp />} />
             <Route path="/users" element={<UserApp />} />
-            <Route path="/" element={<Navigate to="/projects" replace />} />
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
           </Routes>
         </div>
       </div>

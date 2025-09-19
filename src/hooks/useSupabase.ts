@@ -1123,7 +1123,28 @@ export const useProjectOperations = () => {
       setLoading(true);
       setError(null);
 
+      console.log('🗑️ Starting project deletion for ID:', projectId);
+
+      // First, verify the project exists
+      const { data: projectExists, error: checkError } = await supabase
+        .from('projects')
+        .select('id, name')
+        .eq('id', projectId)
+        .single();
+
+      if (checkError) {
+        console.error('❌ Error checking if project exists:', checkError);
+        throw new Error(`Project not found: ${checkError.message}`);
+      }
+
+      if (!projectExists) {
+        throw new Error('Project not found');
+      }
+
+      console.log('✅ Project found:', projectExists.name);
+
       // Check for related records and provide detailed feedback
+      console.log('🔍 Checking for related records...');
       const checks = await Promise.all([
         supabase.from('tasks').select('id').eq('project_id', projectId).limit(1),
         supabase.from('time_entries').select('id').eq('project_id', projectId).limit(1),
@@ -1133,19 +1154,31 @@ export const useProjectOperations = () => {
       const [tasksResult, timeEntriesResult, spiritsResult] = checks;
 
       // Check for errors in queries
-      if (tasksResult.error && tasksResult.error.code !== 'PGRST116') throw tasksResult.error;
-      if (timeEntriesResult.error && timeEntriesResult.error.code !== 'PGRST116') throw timeEntriesResult.error;
-      if (spiritsResult.error && spiritsResult.error.code !== 'PGRST116') throw spiritsResult.error;
+      if (tasksResult.error && tasksResult.error.code !== 'PGRST116') {
+        console.error('❌ Error checking tasks:', tasksResult.error);
+        throw tasksResult.error;
+      }
+      if (timeEntriesResult.error && timeEntriesResult.error.code !== 'PGRST116') {
+        console.error('❌ Error checking time entries:', timeEntriesResult.error);
+        throw timeEntriesResult.error;
+      }
+      if (spiritsResult.error && spiritsResult.error.code !== 'PGRST116') {
+        console.error('❌ Error checking project spirits:', spiritsResult.error);
+        throw spiritsResult.error;
+      }
 
       const hasRelatedRecords = [];
       if (tasksResult.data && tasksResult.data.length > 0) {
         hasRelatedRecords.push('tasks');
+        console.log('📋 Found related tasks:', tasksResult.data.length);
       }
       if (timeEntriesResult.data && timeEntriesResult.data.length > 0) {
         hasRelatedRecords.push('time entries');
+        console.log('⏰ Found related time entries:', timeEntriesResult.data.length);
       }
       if (spiritsResult.data && spiritsResult.data.length > 0) {
         hasRelatedRecords.push('project spirits');
+        console.log('🤖 Found related project spirits:', spiritsResult.data.length);
       }
 
       // If there are related records, ask for confirmation
@@ -1153,25 +1186,32 @@ export const useProjectOperations = () => {
         const recordTypes = hasRelatedRecords.join(', ');
         const confirmMessage = `This project has related ${recordTypes}. Deleting the project will also delete all related records. Are you sure you want to continue?`;
         
+        console.log('⚠️ Asking for confirmation due to related records');
         if (!window.confirm(confirmMessage)) {
+          console.log('❌ User cancelled deletion');
           throw new Error('Project deletion cancelled by user');
         }
+        console.log('✅ User confirmed deletion');
+      } else {
+        console.log('✅ No related records found, proceeding with deletion');
       }
 
       // Proceed with deletion - foreign key constraints should handle cascading
+      console.log('🗑️ Attempting to delete project from database...');
       const { error } = await supabase
         .from('projects')
         .delete()
         .eq('id', projectId);
 
       if (error) {
-        console.error('Database deletion error:', error);
+        console.error('❌ Database deletion error:', error);
         throw new Error(`Database error: ${error.message}`);
       }
 
+      console.log('✅ Project deleted successfully');
       return true;
     } catch (err) {
-      console.error('Delete project error:', err);
+      console.error('❌ Delete project error:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to delete project';
       setError(errorMessage);
       throw new Error(errorMessage);

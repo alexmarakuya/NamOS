@@ -372,7 +372,7 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
                         updateTask(task.id, updates);
                         onTaskUpdate(task.id, updates);
                       }}
-                      className="w-full px-2 py-1 text-sm bg-blue-100 text-blue-800 rounded-md border-0 focus:ring-0 font-dm-sans font-medium"
+                      className="notion-select w-full px-0 py-1 text-sm text-gray-700 bg-transparent border-0 focus:ring-0 font-dm-sans cursor-pointer hover:bg-gray-50 rounded-md"
                     >
                       {projects.map((project) => (
                         <option key={project.id} value={project.id}>
@@ -402,7 +402,8 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
                         updateTask(task.id, updateTaskPayload);
                         onTaskUpdate(task.id, onTaskUpdatePayload);
                       }}
-                      className="w-full px-2 py-1 text-sm text-gray-700 bg-transparent border-0 focus:ring-0 font-dm-sans"
+                      className="w-full px-0 py-1 text-sm text-gray-700 bg-transparent border-0 focus:ring-0 font-dm-sans cursor-pointer hover:bg-gray-50 rounded-md"
+                      style={{ outline: 'none', boxShadow: 'none' }}
                     />
                   </div>
                 </div>
@@ -423,7 +424,7 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
                         updateTask(task.id, updates);
                         onTaskUpdate(task.id, updates);
                       }}
-                      className="w-full px-0 py-1 text-sm text-gray-700 bg-transparent border-0 focus:ring-0 font-dm-sans"
+                      className="notion-select w-full px-0 py-1 text-sm text-gray-700 bg-transparent border-0 focus:ring-0 font-dm-sans cursor-pointer hover:bg-gray-50 rounded-md"
                     >
                       <option value="">Unassigned</option>
                       {teamMembers.map((member) => (
@@ -449,7 +450,8 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
                         value={status}
                         onChange={(e) => handleStatusChange(e.target.value as typeof task.status)}
                         onBlur={() => setEditingStatus(false)}
-                        className="w-full px-2 py-1 text-sm bg-purple-100 text-purple-800 rounded-md border-0 focus:ring-0 font-dm-sans font-medium"
+                        className="w-full px-0 py-1 text-sm text-gray-700 bg-transparent border-0 focus:ring-0 font-dm-sans appearance-none cursor-pointer hover:bg-gray-50 rounded-md"
+                        style={{ outline: 'none', boxShadow: 'none' }}
                         autoFocus
                       >
                         <option value="backlog">Backlog</option>
@@ -460,10 +462,10 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
                       </select>
                     ) : (
                       <span 
-                        className="inline-flex items-center px-2 py-1 text-sm bg-purple-100 text-purple-800 rounded-md font-medium cursor-pointer hover:bg-purple-200 transition-colors font-dm-sans"
+                        className="inline-flex items-center px-0 py-1 text-sm text-gray-700 font-medium cursor-pointer hover:bg-gray-50 rounded-md transition-colors font-dm-sans"
                         onClick={() => setEditingStatus(true)}
                       >
-                        ● {status.replace('_', ' ')}
+                        {status.replace('_', ' ')}
                       </span>
                     )}
                   </div>
@@ -483,7 +485,8 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
                     value={priority}
                     onChange={(e) => handlePriorityChange(e.target.value as typeof task.priority)}
                     onBlur={() => setEditingPriority(false)}
-                        className="w-full px-2 py-1 text-sm bg-yellow-100 text-yellow-800 rounded-md border-0 focus:ring-0 font-dm-sans font-medium"
+                    className="w-full px-0 py-1 text-sm text-gray-700 bg-transparent border-0 focus:ring-0 font-dm-sans appearance-none cursor-pointer hover:bg-gray-50 rounded-md"
+                    style={{ outline: 'none', boxShadow: 'none' }}
                     autoFocus
                   >
                     <option value="low">Low</option>
@@ -493,7 +496,7 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
                   </select>
                 ) : (
                   <span 
-                        className="inline-flex items-center px-2 py-1 text-sm bg-yellow-100 text-yellow-800 rounded-md font-medium cursor-pointer hover:bg-yellow-200 transition-colors font-dm-sans"
+                    className="inline-flex items-center px-0 py-1 text-sm text-gray-700 font-medium cursor-pointer hover:bg-gray-50 rounded-md transition-colors font-dm-sans"
                     onClick={() => setEditingPriority(true)}
                   >
                     {priority}
