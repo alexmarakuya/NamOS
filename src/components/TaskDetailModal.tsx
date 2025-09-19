@@ -372,7 +372,7 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
                         updateTask(task.id, updates);
                         onTaskUpdate(task.id, updates);
                       }}
-                      className="notion-select w-full px-0 py-1 text-sm text-gray-700 bg-transparent border-0 focus:ring-0 font-dm-sans cursor-pointer hover:bg-gray-50 rounded-md"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent font-dm-sans text-sm"
                     >
                       {projects.map((project) => (
                         <option key={project.id} value={project.id}>
@@ -402,8 +402,7 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
                         updateTask(task.id, updateTaskPayload);
                         onTaskUpdate(task.id, onTaskUpdatePayload);
                       }}
-                      className="w-full px-0 py-1 text-sm text-gray-700 bg-transparent border-0 focus:ring-0 font-dm-sans cursor-pointer hover:bg-gray-50 rounded-md"
-                      style={{ outline: 'none', boxShadow: 'none' }}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent font-dm-sans text-sm"
                     />
                   </div>
                 </div>
@@ -424,7 +423,7 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
                         updateTask(task.id, updates);
                         onTaskUpdate(task.id, updates);
                       }}
-                      className="notion-select w-full px-0 py-1 text-sm text-gray-700 bg-transparent border-0 focus:ring-0 font-dm-sans cursor-pointer hover:bg-gray-50 rounded-md"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent font-dm-sans text-sm"
                     >
                       <option value="">Unassigned</option>
                       {teamMembers.map((member) => (
@@ -450,8 +449,7 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
                         value={status}
                         onChange={(e) => handleStatusChange(e.target.value as typeof task.status)}
                         onBlur={() => setEditingStatus(false)}
-                        className="w-full px-0 py-1 text-sm text-gray-700 bg-transparent border-0 focus:ring-0 font-dm-sans appearance-none cursor-pointer hover:bg-gray-50 rounded-md"
-                        style={{ outline: 'none', boxShadow: 'none' }}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent font-dm-sans text-sm"
                         autoFocus
                       >
                         <option value="backlog">Backlog</option>
@@ -485,8 +483,7 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
                     value={priority}
                     onChange={(e) => handlePriorityChange(e.target.value as typeof task.priority)}
                     onBlur={() => setEditingPriority(false)}
-                    className="w-full px-0 py-1 text-sm text-gray-700 bg-transparent border-0 focus:ring-0 font-dm-sans appearance-none cursor-pointer hover:bg-gray-50 rounded-md"
-                    style={{ outline: 'none', boxShadow: 'none' }}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent font-dm-sans text-sm"
                     autoFocus
                   >
                     <option value="low">Low</option>
