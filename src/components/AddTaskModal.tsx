@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Task, Project, TeamMember } from '../types';
-import MultiSelectUser from './MultiSelectUser';
-import MultiSelectProject from './MultiSelectProject';
+import ImprovedUserSelect from './ImprovedUserSelect';
+import ImprovedProjectSelect from './ImprovedProjectSelect';
 import { FormField, Input, Textarea, Select, Button } from './FormField';
 
 interface AddTaskModalProps {
@@ -94,25 +94,25 @@ function AddTaskModal({ projects, teamMembers, onClose, onSubmit, defaultProject
           {/* Project and Assignee Row */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {/* Project */}
-            <FormField label="Project">
-              <MultiSelectProject
-                projects={projects}
-                selectedProjectIds={selectedProjects}
-                onSelectionChange={setSelectedProjects}
-                allowMultiple={false}
-                placeholder="Search linked pages..."
-              />
-            </FormField>
+            <ImprovedProjectSelect
+              projects={projects}
+              selectedProjectIds={selectedProjects}
+              onSelectionChange={setSelectedProjects}
+              label="Project"
+              placeholder="Select project..."
+              multiple={false}
+            />
 
             {/* Assignees */}
-            <FormField label="Assignees">
-              <MultiSelectUser
-                teamMembers={teamMembers}
-                selectedUserIds={assignedMembers}
-                onSelectionChange={setAssignedMembers}
-                placeholder="Select as many as you like"
-              />
-            </FormField>
+            <ImprovedUserSelect
+              teamMembers={teamMembers}
+              selectedUserIds={assignedMembers}
+              onSelectionChange={setAssignedMembers}
+              label="Assignees"
+              placeholder="Select assignees..."
+              multiple={true}
+              maxDisplay={2}
+            />
           </div>
 
           {/* Status and Priority Row */}

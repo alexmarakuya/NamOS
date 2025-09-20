@@ -4,8 +4,8 @@ import { Task, Project, TeamMember } from '../types';
 import { useTaskOperations, useTimeEntries } from '../hooks/useSupabase';
 import { supabase } from '../lib/supabase';
 import NotionStyleEditor from './NotionStyleEditor';
-import MultiSelectUser from './MultiSelectUser';
-import MultiSelectProject from './MultiSelectProject';
+import ImprovedUserSelect from './ImprovedUserSelect';
+import ImprovedProjectSelect from './ImprovedProjectSelect';
 import { FormField, Input, Textarea, Select, Button } from './FormField';
 
 interface TaskDetailModalProps {
@@ -455,11 +455,13 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
                     <span className="text-sm text-gray-600 font-dm-sans">Owner</span>
                   </div>
                   <div className="flex-1">
-                    <MultiSelectUser
+                    <ImprovedUserSelect
                       teamMembers={teamMembers}
                       selectedUserIds={assignedUserIds}
                       onSelectionChange={handleAssigneesChange}
-                      placeholder="Select as many as you like"
+                      placeholder="Select assignees..."
+                      multiple={true}
+                      maxDisplay={2}
                     />
                     {errors.assignees && (
                       <p className="text-red-500 text-xs mt-1 font-dm-sans">{errors.assignees}</p>
@@ -519,12 +521,12 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
                     <span className="text-sm text-gray-600 font-dm-sans">Project</span>
                   </div>
                   <div className="flex-1">
-                    <MultiSelectProject
+                    <ImprovedProjectSelect
                       projects={projects}
                       selectedProjectIds={selectedProjectIds}
                       onSelectionChange={handleProjectsChange}
-                      allowMultiple={false}
                       placeholder="Select project..."
+                      multiple={false}
                     />
                     {errors.project && (
                       <p className="text-red-500 text-xs mt-1 font-dm-sans">{errors.project}</p>
@@ -672,7 +674,7 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
                       rows={2}
                 />
               </FormField>
-                </div>
+              </div>
               )}
               
               {/* Time Entries */}

@@ -1,4 +1,6 @@
 import React from 'react';
+import HeadlessDropdown from './HeadlessDropdown';
+import HeadlessMultiSelect from './HeadlessMultiSelect';
 
 interface FormFieldProps {
   label?: string;
@@ -112,3 +114,6 @@ export const Button: React.FC<ButtonProps> = ({
     </button>
   );
 };
+
+// Export the Headless UI components for easy access
+export { HeadlessDropdown, HeadlessMultiSelect };
